@@ -142,7 +142,8 @@ function formatContent(content) {
     do {
         m = mentionRgx.exec(content);
         if (m) {
-            content = content.replace(new RegExp(m[0],"g"),`@${userStore[m[0].substring(5,m[0].length-4)].username}`);
+            let id = m[0].substring(5,m[0].length-4);
+            content = content.replace(new RegExp(m[0],"g"),`<span class="${currentUser.ID === id ? "me-":""}mention">@${userStore[id].username}</span>`);
         }
     } while (m);
     return content;
