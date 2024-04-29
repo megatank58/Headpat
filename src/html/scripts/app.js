@@ -35,7 +35,7 @@ messageObserver.observe(messageContainer, {
 function onOpen(){
     ws.send("");
     heart = setInterval(sendHeartbeat, 5000);
-    memb = setInterval(getMembers,20*1000);
+    memb = setInterval(getMembers, 20_000);
 }
 
 function onMessage(event){
@@ -48,18 +48,18 @@ function onMessage(event){
     //console.log(eventData);
     switch(eventData.opCode){
         case "MSG":
-            message(eventData);
+            message(eventData.data, true);
             break;
         case "ACK":
             hideToast();
             clearTimeout(heart);
             clearTimeout(memb);
             heart = setInterval(sendHeartbeat, 5000);
-            memb = setInterval(getMembers,20*1000);
+            memb = setInterval(getMembers, 20_000);
             currentUser = eventData.data.user;
             if(version === "") {version = eventData.data.version;}
-            userProfile.innerHTML = `<img style="float: left; border-radius: 50%;" src="/resource/user/${eventData.data.user.ID}" loading="lazy" width="48" height="48" decoding="async" data-nimg="1" style="color: transparent;">
-<h2 style="float: left;" className="no-select">${eventData.data.user.username}#${eventData.data.user.discriminator??"0"}</h2>`;
+            userProfile.innerHTML = `<img class="exitable" src="/resource/user/${eventData.data.user.ID}?size=64">
+            <h2 class="exitable" style="float: left;">${eventData.data.user.username}#${eventData.data.user.discriminator??"0"}</h2>`;
             ws.send(JSON.stringify({opCode: "GET_MEM"}));
             //Intentional fallthrough.
         case "HRT":
@@ -71,42 +71,30 @@ function onMessage(event){
             }
             break;
         case "GET_MEM":
+            function userSort(a, b) {
+                return a.user.username.toLowerCase() < b.user.username.toLowerCase() ? -1 : a.user.username.toLowerCase() > b.user.username.toLowerCase() ? 1 : 0;
+            }
             userContainer.innerHTML = "";
-            eventData.data.memberList
-                .sort((a,b) => {
-                    const x = ["ONLINE","OFFLINE"];
-                    return x.indexOf(a.online) - x.indexOf(b.online);
-                })
-                .forEach(entry => {
+            const onlineUsers = eventData.data.memberList.filter((x) => x.online === 'ONLINE').sort(userSort);
+            const offlineUsers = eventData.data.memberList.filter((x) => x.online === 'OFFLINE').sort(userSort);
+            const roles = {ONLINE: onlineUsers, OFFLINE: offlineUsers};
+            for (const role of Object.keys(roles)) {
+                userContainer.innerHTML += `<span>${role.toUpperCase()}・${roles[role].length}</span>`;
+                roles[role].map((entry) => {
                     userStore[entry.user.ID] = entry.user;
-                    userContainer.innerHTML += `<div class="user ${entry.online}" id="${entry.user.ID}">${entry.user.username}</div>`;
+                    const popup = document.getElementById('userPopup');
+                    const cssActive = popup.getAttribute('data-user') === entry.user.ID && popup.getAttribute('openedBy') !== 'user' ? 'true' : '';
+                    userContainer.innerHTML += `
+                    <div css-active="${cssActive}" class="user ${entry.online} exitable" id="${entry.user.ID}" onclick="openUserPopup('${entry.user.ID}', this)">
+                    <img src="/resource/user/${entry.user.ID}?size=32"><div class="userStatus"></div><span>${entry.user.username}</span>
+                    </div>`;
                 });
+            }
             ws.send(JSON.stringify({opCode: "GET_MSG"}));
             break;
         case "GET_MSG":
-            messageContainer.innerHTML = eventData.data.messages.map(msg => `<div class="message" id="${msg.ID}">
-<pre>
-${userStore[msg.userID]?.username ?? msg.userID}・${parseTimestamp(msg.createdAt)}
-${DOMPurify.sanitize(linkifyHtml(msg.content, {target: "_blank"}),{ ALLOWED_TAGS: ['a'], ALLOWED_ATTR: ['target','href'] })}
-</pre></div>`).join("");
-            eventData.data.messages.map(msg => {
-                const htmlMsg = document.getElementById(msg.ID);
-                htmlMsg.addEventListener("contextmenu",function(event){
-                    event.preventDefault();
-                    const ctxMenu = document.getElementById("messageCtx");
-                    if(ctxMenu["data-messageID"] === msg.ID){
-                        ctxMenu.style.display = "";
-                        ctxMenu.style.left = "";
-                        ctxMenu.style.top = "";
-                        ctxMenu["data-messageID"] = "";
-                        return;
-                    }
-                    ctxMenu.style.display = "block";
-                    ctxMenu.style.left = (event.pageX - 10)+"px";
-                    ctxMenu.style.top = (event.pageY - 10)+"px";
-                    ctxMenu["data-messageID"] = msg.ID;
-                },false);
-            });
+            messageContainer.innerHTML = '';
+            eventData.data.messages.map(msg => message(msg));
             messageContainer.setAttribute("loaded", "true");
             break;
         case "DEL_MSG":
@@ -115,12 +103,11 @@ ${DOMPurify.sanitize(linkifyHtml(msg.content, {target: "_blank"}),{ ALLOWED_TAGS
             }
             break;
         case "UPD_PRF":
-            document.getElementById("userProfile").style.setProperty("display", "none", "important");
-
-            document.getElementById("username").value = eventData.data.user.username ?? "";
-            document.getElementById("discriminator").value = eventData.data.user.discriminator ?? "";
-            userProfile.innerHTML = `<img style="float: left; border-radius: 50%;" src="/resource/user/${eventData.data.user.ID}" loading="lazy" width="48" height="48" decoding="async" data-nimg="1" style="color: transparent;">
-<h2 style="float: left;" className="no-select">${eventData.data.user.username}#${eventData.data.user.discriminator??"0"}</h2>`;
+            document.getElementById("userPopupUsername").value = eventData.data.user.username ?? "";
+            document.getElementById("userPopupDiscriminator").value = eventData.data.user.discriminator ?? "";
+            userProfile.innerHTML = `<img class="exitable" src="/resource/user/${eventData.data.user.ID}?size=64">
+            <h2 class="exitable" style="float: left;">${eventData.data.user.username}#${eventData.data.user.discriminator??"0"}</h2>`;
+            showToast('Profile Saved', false, 2.5);
     }
 }
 
@@ -128,7 +115,7 @@ function parseTimestamp(timestamp){
     const msgTime = new Date(parseInt(timestamp));
     const now = new Date();
     const clock = `${msgTime.getHours().toString().padStart(2,"0")}:${msgTime.getMinutes().toString().padStart(2,"0")}`;
-    const calendar = `${msgTime.getDate().toString().padStart(2,"0")}/${msgTime.getMonth().toString().padStart(2,"0")}/${msgTime.getFullYear()}`;
+    const calendar = `${msgTime.getDate().toString().padStart(2,"0")}/${(msgTime.getMonth() + 1).toString().padStart(2,"0")}/${msgTime.getFullYear()}`;
     if(now.getTime() - msgTime.getTime() < 1000*60*60*24 && now.getDate() === msgTime.getDate()){
         return `Today at ${clock}`;
     } else if(now.getTime() - msgTime.getTime() < 1000*60*60*24*2 && now.getDate() !== msgTime.getDate()){
@@ -138,35 +125,50 @@ function parseTimestamp(timestamp){
     }
 }
 
-function message(eventData){
-    if(eventData.error) return console.error(eventData.error);
-    messageContainer.innerHTML += `<div class="message">
+function message(data, scroll){
+    if(data.error) return console.error(data.error);
+    messageContainer.innerHTML += `<div class="message" id="${data.ID}" oncontextmenu="openMessageContext(event, this)">
 <pre>
-${userStore[eventData.data.userID]?.username ?? eventData.data.userID}・${parseTimestamp(eventData.data.createdAt)}
-${DOMPurify.sanitize(linkifyHtml(eventData.data.content, {target: "_blank"}),{ ALLOWED_TAGS: ['a'], ALLOWED_ATTR: ['target','href'] })}
+${userStore[data.userID]?.username ?? data.userID}・${parseTimestamp(data.createdAt)}
+${DOMPurify.sanitize(linkifyHtml(data.content, {target: "_blank"}),{ ALLOWED_TAGS: ['a'], ALLOWED_ATTR: ['target','href'] })}
 </pre></div>`;
-    moveChat(eventData.data.userID);
+    if (scroll && scroll === true) moveChat(data.userID);
+}
+
+function openMessageContext(event, element) {
+    const ctxMenu = document.getElementById("messageCtx");
+    if(ctxMenu["data-messageID"] === element.id){
+        ctxMenu.style = "";
+        ctxMenu["data-messageID"] = "";
+        return;
+    }
+    ctxMenu.style.display = "block";
+    ctxMenu.style.left = (event.pageX - 10)+"px";
+    ctxMenu.style.top = (event.pageY - 10)+"px";
+    ctxMenu["data-messageID"] = element.id;
 }
 
 const toast = document.getElementById("snackbar");
 function showToast(msg, load, time){
     toast.className = "show";
     toast.innerHTML = msg;
-    if(time !== undefined && time !== null){setTimeout(()=>{toast.className = toast.className.replace("show", "");}, time*1000);}
-    if(load !== undefined && load !== null){ toast.innerHTML = `<p>${msg}</p>
-    <div id="dot-spin" class="dot-spin"></div>` }
+    if(time !== undefined && time !== null) setTimeout(() => toast.className = toast.className.replace("show", ""), time * 1000);
+    if(load !== undefined && load !== null && load !== false) toast.innerHTML = `<p>${msg}</p><div id="dot-spin" class="dot-spin"></div>`;
 }
 function hideToast(){
     toast.className = "";
 }
 
-document.addEventListener("click",function(){
+document.onclick = (event) => {
     const ctxMenu = document.getElementById("messageCtx");
-    ctxMenu.style.display = "";
-    ctxMenu.style.left = "";
-    ctxMenu.style.top = "";
+    ctxMenu.style = "";
     ctxMenu["data-messageID"] = "";
-},false);
+    closePopup(event.target);
+};
+
+document.oncontextmenu = (event) => {
+    event.preventDefault();
+};
 
 function onClose(){
     console.log("Closing connection.");
@@ -226,6 +228,7 @@ function sendMessage(message) {
 let keyMap = {}; //A map for what keys are currently pressed for messageField
 messageField.onkeydown = messageField.onkeyup = function(e){
     keyMap[e.key] = e.type == 'keydown';
+    messageField.scrollTop = messageField.scrollHeight;
     if(keyMap["Enter"] && !keyMap["Shift"] && !isMobile) {
         e.preventDefault();
         sendMessage(messageField.innerText.replace(/^\s+|\s+$/g, ""));
@@ -244,8 +247,8 @@ const leftToggle = document.getElementById("serverChannelListToggle");
 
 if (isMobile) {
     document.body.style.minHeight = "100%";
-    leftContainer.style.display = "none";
-    userContainer.style.display = "none";
+    leftContainer.style = 'display: none; width: 100%; max-width: 100vw;';
+    userContainer.style = 'display: none; width: 100%; min-width: 100%; max-width: 100vw;';
     leftToggle.style.display = "block";
     mobileSend.style.display = "block";
     mobileSend.addEventListener("click", () => {
@@ -289,48 +292,121 @@ function deleteMessage(){
     }))
 }
 
-document.getElementById("logoutButton").onclick = () =>{
-    location.href = "/logout";
+document.getElementById("logoutButton").onclick = () => location.href = "/logout";
+
+userProfile.onclick = () => openUserPopup(currentUser.ID, userProfile, true);
+
+window.onresize = () => {
+    closePopup();
 };
 
-document.getElementById("userProfile").style.setProperty("display", "none", "important");
-document.getElementById("user").onclick = ()=>{
-    document.getElementById("userProfile").style.setProperty("display", "flex", "important");
-}
-
-document.getElementById("closeProfile").onclick = ()=>{
-    document.getElementById("userProfile").style.setProperty("display", "none", "important");
-}
-
-document.getElementById("profilePicture").onclick = ()=>{
-    alert("Change PFP is a Work-In-Progress");
-
-}
-
-document.getElementById("saveProfile").onclick = ()=>{
-    //const profilePicture = document.getElementById("profilePicture").innerHTML or smth idk yet
-    const username = document.getElementById("username").value;
-    const discriminator = document.getElementById("discriminator").value;
-    const oldPass = document.getElementById("oldPassword").value;
-    const newPass = document.getElementById("newPassword").value;
-    const data = {};
-    if(username.length > 0) data["username"] = username;
-    if(discriminator.length > 0) data["discriminator"] = discriminator;
-    if(newPass.length > 0){
-        if(oldPass.length > 0){
-            //Complain to user.
-        } else {
-            data["oldPass"] = oldPass;
-            data["newPass"] = newPass;
-        }
+function closePopup(element) {
+    const popup = document.getElementById(`userPopup`);
+    if (popup.style.display === 'none') return;
+    // element should only be excluded when window is resized
+    if (!element) { 
+        popup.style.display = 'none';
+        document.querySelectorAll('[css-active="true"]').forEach((e) => e.setAttribute('css-active', 'false'));
+        return;
     }
-    ws.send(JSON.stringify({
-        opCode: "UPD_PRF",
-        data
-    }));
+    const ecl = element.classList;
+    const parent = element.parentElement.classList;
+    if (ecl.contains('exitable') || parent.contains('exitable') || element.id.includes('userPopup') || ecl.toString().includes('userPopup') || parent.toString().includes('userPopup')) return;
+    document.querySelectorAll('[css-active="true"]').forEach((e) => e.setAttribute('css-active', 'false'));
+    popup.setAttribute('data-user', '');
+    popup.style.display = 'none';
 }
 
-function moveChat(user){
+function openUserPopup(userID, element, editable) {
+    const user = userStore[userID];
+    if (!user) return console.error('Invalid User.');
+    const popup = document.getElementById(`userPopup`);
+    document.querySelectorAll('[css-active="true"]').forEach((e) => e.setAttribute('css-active', 'false'));
+    popup.setAttribute('data-user', '');
+    if (popup.style.display === "flex" && popup.getAttribute('openedBy') === element.id) return popup.style.display = 'none';
+    element.setAttribute('css-active', 'true');
+    popup.setAttribute('openedBy', element.id);
+    popup.setAttribute('data-user', userID);
+    const popupEditable = document.getElementById(`userPopupEditable`);
+    const popupNonEditable = document.getElementById(`userPopupNonEditable`);
+    const userStatus = document.getElementById(userID).classList.toString().replace('user ', '').replace(' exitable', '')
+
+    if (userID === currentUser.ID && editable) {
+        popupEditable.style.display = 'flex';
+        popupNonEditable.style.display = 'none';
+        const avatar = document.getElementById(`userPopupAvatarEditable`);
+        //const banner = document.getElementById(`userPopupBannerEditable`);
+        const status = document.getElementById(`userPopupStatusEditable`);
+        const usernameInput = document.getElementById(`userPopupUsernameInput`);
+        const discriminatorInput = document.getElementById(`userPopupDiscriminatorInput`);
+        //const email = document.getElementById(`userPopupEmail`);
+        const oldPassword = document.getElementById(`userPopupOldPassword`);
+        const newPassword = document.getElementById(`userPopupNewPassword`);
+        const saveButton = document.getElementById(`saveProfile`);
+        status.classList.add(userStatus);
+        status.classList.remove(userStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
+        avatar.src = `/resource/user/${userID}?size=128`
+        avatar.addEventListener("click", () => {
+            showToast("Change PFP is a Work-In-Progress", false, 5);
+        });
+        saveButton.addEventListener("click", () => {
+            const data = {};
+            if(usernameInput.value.length > 0) data["username"] = usernameInput.value;
+            if(discriminatorInput.value.length > 0) data["discriminator"] = discriminatorInput.value;
+            if(newPassword.value.length > 0){
+                if(oldPassword.value.length > 0){
+                    //Complain to user.
+                } else {
+                    data["oldPass"] = oldPassword.value;
+                    data["newPass"] = newPassword.value;
+                }
+            }
+            ws.send(JSON.stringify({ opCode: "UPD_PRF", data }));
+        });
+    } else {
+        popupEditable.style.display = 'none';
+        popupNonEditable.style.display = 'flex';
+        const avatar = document.getElementById(`userPopupAvatar`);
+        //const banner = document.getElementById(`userPopupBanner`);
+        const username = document.getElementById(`userPopupUsername`);
+        const discriminator = document.getElementById(`userPopupDiscriminator`);
+        const joined = document.getElementById(`userPopupJoined`);
+        const status = document.getElementById(`userPopupStatus`);
+        avatar.src = `/resource/user/${userID}?size=128`;
+        status.classList.add(userStatus);
+        status.classList.remove(userStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
+        username.innerHTML = user.username ?? "Nya";
+        discriminator.innerHTML = user.discriminator ?? "0000";
+        joined.innerHTML = parseTimestamp(user.createdAt);
+    }
+
+    popup.style = 'display: flex;';
+    const elementData = element.getBoundingClientRect();
+    let popupData = popup.getBoundingClientRect();
+    if (isMobile) return popup.style.inset = `${document.body.clientHeight / 2}px 10px 10px`;
+    if (element.id === 'user') {
+        //position popup above element if element is the current user profile
+        popup.style.bottom = document.body.clientHeight - elementData.top + 10 + 'px';
+        popupData = popup.getBoundingClientRect();
+        if (popupData.top < 0) popup.style.top = '10px';
+        popup.style.left = '10px';
+    } else if (element.classList.contains('user')) {
+        //position popup to the left of element if element is a user from the member list
+        popup.style.top = elementData.top + 'px';
+        popupData = popup.getBoundingClientRect();
+        if (popupData.bottom > document.body.clientHeight) popup.style.top = (elementData.top - (popupData.bottom - document.body.clientHeight)) - 10 + 'px';
+        if (popupData.top < 0) {
+            popup.style.bottom = '10px';
+            popup.style.top = '10px';
+        };
+        popup.style.left = (elementData.left - popupData.width) - 10 + 'px';
+    } else {
+        //position popup to the right of element hopefully only if element is a chat username
+        //for future use
+    }
+}
+
+function moveChat(user) {
     if (!user) return messageContainer.scrollTop = messageContainer.scrollHeight;
     if (user === currentUser.ID) messageContainer.scrollTop = messageContainer.scrollHeight;
     else if (messageContainer.scrollTop + messageContainer.clientHeight + 100 > messageContainer.scrollHeight) {

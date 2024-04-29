@@ -1,7 +1,22 @@
+:root {
+    --bg-0: hsl(220, 7%, 8%);
+    --bg-1: hsl(220, 7%, 12%);
+    --bg-2: hsl(220, 7%, 16%);
+    --bg-3: hsl(220, 7%, 20%);
+    --bg-4: hsl(220, 7%, 23%);
+    --bg-5: hsl(220, 7%, 26%);
+    --font-color-1: hsl(0, 0%, 100%);
+    --font-color-2: hsl(0, 0%, 85%);
+    --font-color-3: hsl(0, 0%, 70%);
+
+    --user-online: #13923d;
+    --user-offline: hsl(220, 8%, 30%);
+}
+
 html body {
     min-height: 100vh;
-    color: rgb(209, 205, 199);
-    background-color: #36393F !important;
+    color: var(--font-color-1);
+    background-color: var(--bg-1);
     -webkit-tap-highlight-color: transparent;
     margin: 0;
     padding: 0;
@@ -13,8 +28,7 @@ body {
 }
 
 .navbar {
-    background-color: #202325 !important;
-    color: rgb(209, 205, 199);
+    background-color: var(--bg-1) !important;
 }
 
 .callout {
@@ -26,7 +40,7 @@ body {
 
 .callout-danger {
     z-index: 999;
-    color: rgba(255, 255, 255, 1);
+    color: var(--font-color-1);
     background-color: rgba(67, 12, 17, 0.9);
     border-color: rgba(106, 17, 26, 0.9);
     position: absolute;
@@ -42,7 +56,7 @@ body {
 }
 
 #messageContainer::-webkit-scrollbar-track {
-    background: hsl(223, 9%, 17%);
+    background: var(--bg-3);
     padding: 2px;
     border: 3px solid transparent;
     border-radius: 8px;
@@ -50,7 +64,7 @@ body {
 }
 
 #messageContainer::-webkit-scrollbar-thumb {
-    background: #1a1b1e;
+    background: var(--bg-1);
     border: 3px solid transparent;
     border-radius: 8px;
     background-clip: content-box;
@@ -68,7 +82,7 @@ body {
 }
 
 #messageField::-webkit-scrollbar-thumb {
-    background: hsl(225, 7%, 14%);
+    background: var(--bg-3);
     border: 3px solid transparent;
     border-radius: 8px;
     background-clip: content-box;
@@ -84,24 +98,16 @@ body {
     margin-bottom: 10px;
 }
 
-.user {
-    margin-bottom: 5px;
-}
-
 .text-input {
     border: none;
     outline: none;
-    color: #FFFFFF;
+    color: var(--font-color-1);
     padding: 10px;
     box-sizing: border-box;
     width: 100%;
     background-clip: padding-box;
     max-height: 40vh;
     overflow-y: auto;
-}
-
-.OFFLINE {
-    color: #808080 !important;
 }
 
 menu {
@@ -115,6 +121,7 @@ menu {
     font-weight: normal;
     white-space: nowrap;
     background-color: #494949;
+    z-index: 100;
 }
 
 menu:hover {
@@ -138,12 +145,6 @@ menu:hover {
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
-}
-
-.user-profile {
-    position: absolute !important;
-    left: 0;
-    bottom: 0;
 }
 
 .card-header {
@@ -243,6 +244,145 @@ pre {
 #leftContainer {
     display: flex;
     flex-direction: column;
+    max-width: 260px;
+}
+
+#user {
+    width: 100%;
+    background-color: var(--bg-1);
+    display: flex;
+    cursor: pointer;
+    padding: 5px;
+    align-items: center;
+    position: relative;
+}
+
+#user>img {
+    float: left; 
+    border-radius: 50%;
+    width: 42px;
+    aspect-ratio: 1;
+}
+
+#user h2 {
+    margin: 0 0 0 4px;
+    font-size: 28px;
+    user-select: none;
+}
+
+#userPopupBackground {
+    position: absolute;
+    inset: 0;
+    z-index: 9999;
+    background-color: rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+}
+
+#userPopup {
+    position: absolute;
+    width: 330px;
+    flex-direction: column;
+    background-color: var(--bg-1);
+    z-index: 9999;
+    border-radius: 8px;
+    cursor: default;
+    box-shadow: rgba(0, 0, 0, 0.8) 0px 0px 10px;
+    background-clip: content-box;
+    overflow: hidden;
+}
+
+.userPopupMain {
+    height: 100%; 
+    flex-direction: column;
+}
+
+.userPopupTop {
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.userPopupTop input[type="file"] {
+    position: absolute;
+    top: -100000;
+}
+
+.userPopupBanner {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 64px;
+    background-color: black;
+}
+
+.userPopupAvatar {
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    z-index: 100;
+    margin: 10px 0 0 10px;
+    box-sizing: content-box;
+    border: 5px solid var(--bg-1);
+    background-color: black;
+}
+
+.userPopupStatus {
+    position: absolute;
+    background-color: var(--user-offline);
+    border: 6px solid var(--bg-1);
+    width: 26px;
+    height: 26px;
+    z-index: 101;
+    top: 74px;
+    left: 74px;
+    border-radius: 50%;
+}
+
+.userPopupStatus.ONLINE {
+    background-color: var(--user-online);
+}
+
+.userPopupStatus.OFFLINE::after {
+    content: "";
+    background-color: var(--bg-1);
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    top: 25%;
+    left: 25%;
+    border-radius: 50%;
+}
+
+.userPopupBottom {
+    display: flex;
+    flex-direction: column;
+    margin: 10px;
+    padding: 10px;
+    background-color: var(--bg-0);
+    border-radius: 8px;
+    overflow-y: auto;
+}
+
+.userPopupBottom :first-child {
+    padding-top: 0 !important;
+}
+
+#userPopupNameContainer {
+    display: flex;
+    flex-direction: row;
+    font-size: 20px;
+    font-weight: 600;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--bg-3);
+    margin-bottom: 12px;
+}
+
+.userPopupBottom .sectionHeader {
+    padding-top: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 6px;
 }
 
 #rightContainer {
@@ -258,19 +398,19 @@ pre {
     flex-basis: auto;
     align-self: auto;
     order: 0;
-    /* border: red 1px solid; */
 }
 
 #servers {
     width: 80px;
-    background-color: #2A2C31;
+    background-color: var(--bg-2);
 }
 
 #channels {
-    width: 180px;
-    background-color: #36393F;
+    background-color: var(--bg-3);
     color: #FFFFFF;
     padding: 10px;
+    flex-shrink: 0;
+    flex-grow: 1;
 }
 
 #messages {
@@ -278,7 +418,7 @@ pre {
     flex-direction: column;
     width: 100%;
     min-width: 240px;
-    background-color: #2F3136;
+    background-color: var(--bg-4);
     color: #FFFFFF;
     overflow: hidden;
 }
@@ -290,39 +430,126 @@ pre {
     flex-grow: 1;
     overflow-y: scroll;
     overflow-wrap: break-word;
+    outline: none;
 }
 
 #userList {
     padding: 10px;
-    min-width: 200px;
-    background-color: #36393F;
-}
-
-#user {
-    width: 100%;
-    background-color: #121315;
+    width: 240px;
+    max-width: 240px;
+    min-width: 240px;
+    background-color: var(--bg-3);
     display: flex;
+    flex-direction: column;
+    overflow-y: scroll;
+    row-gap: 1px;
+    outline: none;
 }
 
-#user:hover {
+#userList::-webkit-scrollbar {
+    width: 0px;
+}
+
+#userList:hover::-webkit-scrollbar {
+    width: 10px;
+}
+
+#userList:hover {
+    padding: 10px 0px 10px 10px;
+}
+
+#userList::-webkit-scrollbar-track {
+    padding: 2px;
+    border: 3px solid transparent;
+    border-radius: 8px;
+    background-clip: content-box;
+}
+
+#userList::-webkit-scrollbar-thumb {
+    background: hsl(225, 7%, 14%);
+    border: 3px solid transparent;
+    border-radius: 8px;
+    background-clip: content-box;
+}
+
+#userList>span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--font-color-2);
+    padding-left: 4px;
+    user-select: none;
+}
+
+.user {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 5px;
+    user-select: none;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.user:hover, .user[css-active="true"] {
+    background-color: var(--bg-5);
     cursor: pointer;
+    opacity: 1 !important;
+}
+
+.user img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.user .userStatus {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--bg-3);
+    border-radius: 50%;
+}
+
+.user:hover .userStatus, .user[css-active="true"] .userStatus {
+    border: 2px solid var(--bg-5);
+}
+
+.user>span {
+    align-self: center;
+    padding-left: 4px;
+    font-weight: 500;
+    text-wrap: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user.ONLINE .userStatus {
+    background-color: var(--user-online);
+}
+
+.user.OFFLINE {
+    opacity: 0.5;
 }
 
 #rightNav {
     width: 100%;
-    background: #2F3136;
+    background: var(--bg-4);
     display: flex;
     padding: 10px;
     align-items: center;
-    border-bottom: 1px solid #1a1b1e;
+    border-bottom: 1px solid var(--bg-1);
 }
 
 #serverChannelListToggle {
     display: none;
 }
 
-#channelName {
-    color: #ffffff;
+#rightNavChannelName {
+    color: var(--font-color-1);
+    font-weight: bold;
+    font-size: 15px;
 }
 
 #rightNavButtons {
@@ -332,7 +559,7 @@ pre {
 #userListToggle {
     appearance: none;
     border: none;
-    color: #ffffff;
+    color: var(--font-color-1);
     background: none;
     padding: 0;
 }
@@ -347,8 +574,9 @@ pre {
     border: 5px solid transparent;
     border-radius: 10px;
     background-clip: content-box;
+    margin-bottom: 2.5px;
     position: relative;
-    background-color: #40444B;
+    background-color: var(--bg-5);
     display: flex;
     align-items: center;
 }
@@ -362,8 +590,7 @@ pre {
     position: relative;
     height: 44px;
     aspect-ratio: 1;
-    border-left: 1px solid #747474;
-    /* background-color: rgba(0, 255, 255, 0.267); */
+    border-left: 1px solid var(--font-color-3);
     bottom: 0;
     display: none;
     align-items: center;
@@ -389,16 +616,13 @@ pre {
     pointer-events: none;
     background: transparent;
     bottom: 0;
-    color: #808080;
+    color: var(--font-color-3);
     z-index: 0;
+    user-select: none;
 }
 
-@media screen and (max-width: 720px) {
-    /* #left-container {
-        display: none;
+@media screen and (max-width: 420px) {
+    #userPopup {
+        width: auto;
     }
-
-    #user-list {
-        display: none;
-    } */
 }
