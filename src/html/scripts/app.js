@@ -130,9 +130,22 @@ function message(data, scroll){
     messageContainer.innerHTML += `<div class="message" id="${data.ID}" oncontextmenu="openMessageContext(event, this)">
 <pre>
 ${userStore[data.userID]?.username ?? data.userID}・${parseTimestamp(data.createdAt)}
-${DOMPurify.sanitize(linkifyHtml(data.content, {target: "_blank"}),{ ALLOWED_TAGS: ['a'], ALLOWED_ATTR: ['target','href'] })}
+${formatContent(data.content)}
 </pre></div>`;
     if (scroll && scroll === true) moveChat(data.userID);
+}
+
+function formatContent(content) {
+    content = DOMPurify.sanitize(linkifyHtml(content, {target: "_blank"}),{ ALLOWED_TAGS: ['a'], ALLOWED_ATTR: ['target','href'] });
+    const mentionRgx = /&lt;@[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}&gt;/gmi;
+    let m;
+    do {
+        m = mentionRgx.exec(content);
+        if (m) {
+            content = content.replace(new RegExp(m[0],"g"),`@${userStore[m[0].substring(5,m[0].length-4)].username}`);
+        }
+    } while (m);
+    return content;
 }
 
 function openMessageContext(event, element) {
@@ -304,7 +317,7 @@ function closePopup(element) {
     const popup = document.getElementById(`userPopup`);
     if (popup.style.display === 'none') return;
     // element should only be excluded when window is resized
-    if (!element) { 
+    if (!element) {
         popup.style.display = 'none';
         document.querySelectorAll('[css-active="true"]').forEach((e) => e.setAttribute('css-active', 'false'));
         return;
