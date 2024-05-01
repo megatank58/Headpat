@@ -1,7 +1,7 @@
 import WebsocketEvent from "../../structs/WebsocketEvent";
 import {readDatabase} from "../database";
-import Channel from "../../structs/Channel";
 import Message from "../../structs/Message";
+import Server from "../../structs/Server";
 
 
 export default class GetMessages extends WebsocketEvent {
@@ -11,7 +11,9 @@ export default class GetMessages extends WebsocketEvent {
 
     async exec(event, ws, args) {
         if(event.data?.from) return; //TODO Implement scrolling get
-        const channel = await readDatabase("channels",ws.currentChannel) as Channel;
+        const server = await readDatabase("servers",ws.currentServer) as Server;
+        const channel = server.channels[ws.currentChannel];
+        if(!channel) return console.log("NO CHAN");
         const messagePromises: Promise<Message>[] = [];
         channel.messages.slice(-50).forEach(messageID => {
             messagePromises.push(readDatabase("messages", messageID) as Promise<Message>);

@@ -1,8 +1,8 @@
 import WebsocketEvent from "../../structs/WebsocketEvent";
 import {readDatabase, removeDatabase, writeDatabase} from "../database";
 import Message from "../../structs/Message";
-import Channel from "../../structs/Channel";
 import {WebSocket} from "ws";
+import Server from "../../structs/Server";
 
 export default class DeleteMessage extends WebsocketEvent {
     constructor() {
@@ -16,37 +16,32 @@ export default class DeleteMessage extends WebsocketEvent {
                 message.channelID === ws.currentChannel &&
                 message.userID === ws.tid
             ){
-                removeDatabase("messages",event.data.messageID).then(()=>{
-                    readDatabase("channels", message.channelID).then((channel: Channel) => {
+                removeDatabase("messages",event.data.messageID).then(async ()=>{
+                    readDatabase("servers", ws.currentServer).then(async (server: Server)=>{
+                        const channel = server.channels[message.channelID];
                         const idx = channel.messages.indexOf(event.data.messageID);
                         if(idx > -1) channel.messages.splice(idx,1);
-                        writeDatabase("channels",message.channelID,channel).then(()=>{
-                            args.server.clients.forEach(x => {
-                                if(x.readyState === WebSocket.OPEN && x.currentChannel === ws.currentChannel){
-                                    x.send(JSON.stringify({
-                                        opCode: "DEL_MSG",
-                                        data: {
-                                            messageID: event.data.messageID
-                                        }
-                                    }));
-                                }
-                            }); //What the fuck is this catching hell... I need to improve upon this XD
-                        }).catch(()=>{
-                            ws.send(JSON.stringify({
-                                opCode: "DEL_MSG",
-                                error: "Channel not found."
-                            }));
+                        await writeDatabase("servers",message.serverID,server);
+                        args.server.clients.forEach(x => {
+                            if(x.readyState === WebSocket.OPEN && x.currentChannel === ws.currentChannel){
+                                x.send(JSON.stringify({
+                                    opCode: "DEL_MSG",
+                                    data: {
+                                        messageID: event.data.messageID
+                                    }
+                                }));
+                            }
                         });
                     }).catch(()=>{
                         ws.send(JSON.stringify({
                             opCode: "DEL_MSG",
-                            error: "Channel not found."
+                            error: "Server not found."
                         }));
                     });
                 }).catch(()=>{
                     ws.send(JSON.stringify({
                         opCode: "DEL_MSG",
-                        error: "Message not found."
+                        error: "Database error at deletion."
                     }));
                 });
             } else {

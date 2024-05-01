@@ -1,7 +1,6 @@
 import Keyv from "keyv";
 import Server from "../structs/Server";
 import User from "../structs/User";
-import Channel from "../structs/Channel";
 import RegCode from "../structs/RegCode";
 
 let dbs: {[key: string]: Keyv | null} = {
@@ -41,14 +40,16 @@ const initDatabase = async () => {
             ID: "0",
             name: "DEV",
             userID: "0",
-            channels: ["0"],
+            channels: [
+                {
+                    ID: "0",
+                    name: "dev",
+                    messages: [],
+                    permissions: []
+                }
+            ],
             members: ["0"]
         } as Server);
-        dbs["channels"]!.set("0", {
-            ID: "0",
-            serverID: "0",
-            messages: []
-        } as Channel);
     }
 
     //This is here so that registration is possible on a fresh installation.
@@ -78,7 +79,10 @@ const readDatabase = (db, id)=>{
     //console.log(`READ: ${db} - ${id}`);
     return new Promise(async (res, rej) => {
         if(dbs[db] !== null && Object.keys(dbs).includes(db)){
-            if(!await dbs[db]!.has(id)) return rej(`${db} > ${id} > NO_DATA`);
+            if(!await dbs[db]!.has(id)) {
+                console.log(`${db} > ${id} > NO_DATA`);
+                return res(null);
+            }
             dbs[db]!.get(id).then(data => {
                 //console.log(data);
                 res(data);
