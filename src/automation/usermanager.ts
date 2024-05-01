@@ -4,11 +4,8 @@ import Server from "../structs/Server";
 
 const getUser = async (id): Promise<User> => {
     return new Promise((res)=>{
-        readDatabase("users",id).then(user => {
-            res(user as User);
-        }).catch(async (err)=>{
-            //It'd only fail if the user object doesn't exist already, so we create it.
-            res(await createUser(id));
+        readDatabase("users",id).then(async user => {
+            res(user === null ? await createUser(id) : user as User);
         });
     });
 };
@@ -26,7 +23,7 @@ const getUserCount = async (): Promise<number> =>{
 const createUser = async (id): Promise<User> => {
     return new Promise(async (res, rej)=>{
         const exists = await readDatabase("users", id).catch(e => console.log(e));
-        if(exists !== undefined) rej("USER_EXISTS");
+        if(exists !== null) rej("USER_EXISTS");
         const user = {
             ID: id,
             username: "Nya",

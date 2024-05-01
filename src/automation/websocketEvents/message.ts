@@ -2,7 +2,6 @@ import WebsocketEvent from "../../structs/WebsocketEvent";
 import {readDatabase, writeDatabase} from "../database";
 import User from "../../structs/User";
 import Server from "../../structs/Server";
-import Channel from "../../structs/Channel";
 import Message from "../../structs/Message";
 import {WebSocket} from "ws";
 
@@ -35,12 +34,12 @@ export default class MessageCreate extends WebsocketEvent {
                     const server = await readDatabase("servers",message.serverID) as Server;
                     if(!server) rej("NO_SERVER");
                     if(!server.members.includes(author.ID)) rej("NOT_MEMBER");
-                    if(!server.channels.includes(message.channelID)) rej("NO_CHANNEL");
-                    const channel: Channel = await readDatabase("channels", message.channelID) as Channel;
+                    if(!server.channels[message.channelID]) rej("NO_CHANNEL");
+                    const channel = server.channels[message.channelID];
                     if(channel["messages"] === undefined) channel["messages"] = [];
                     channel.messages.push(message.ID);
                     await writeDatabase("messages", message.ID, message);
-                    await writeDatabase("channels", message.channelID, channel);
+                    await writeDatabase("servers", message.serverID, server);
                 } else {
                     const recipient = await readDatabase("users", message.channelID) as User;
                     if(!recipient) rej("NO_RECIPIENT");

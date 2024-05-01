@@ -4,7 +4,7 @@ ws.onopen = onOpen;
 ws.onmessage = onMessage;
 ws.onclose = onClose;
 ws.onerror = onError;
-let heart, memb, currentUser;
+let heart, memb, currentUser, currentChannel, currentServer;
 let version = "";
 
 let userStore = {};
@@ -47,6 +47,7 @@ function onMessage(event){
         return;
     }
     //console.log(eventData);
+    if(eventData.data.error) return console.error(data.error);
     switch(eventData.opCode){
         case "MSG":
             message(eventData.data, true);
@@ -58,6 +59,8 @@ function onMessage(event){
             heart = setInterval(sendHeartbeat, 5000);
             memb = setInterval(getMembers, 20_000);
             currentUser = eventData.data.user;
+            currentServer = eventData.data.state.currentServer;
+            currentChannel = eventData.data.state.currentChannel;
             if(version === "") {version = eventData.data.version;}
             setUserProfile(eventData.data.user);
             ws.send(JSON.stringify({opCode: "GET_MEM"}));
@@ -100,6 +103,14 @@ function onMessage(event){
             break;
         case "GET_SER":
             document.getElementById('serverNameSpan').innerText = eventData.data.server.name;
+            document.getElementById("rightNavChannelName").innerText = eventData.data.server.channels[currentChannel].name;
+            document.getElementById("messageFieldPlaceholder").innerText = `Message #${eventData.data.server.channels[currentChannel].name}`;
+            document.getElementById("channelsContainer").innerHTML = eventData.data.server.channels.map(channel => {
+                return `<a class="channel${currentChannel === channel.ID ? " active" : ""}" id="${channel.ID}">
+                        <svg x="0" y="0" class="icon_ae0b42" aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M10.99 3.16A1 1 0 1 0 9 2.84L8.15 8H4a1 1 0 0 0 0 2h3.82l-.67 4H3a1 1 0 1 0 0 2h3.82l-.8 4.84a1 1 0 0 0 1.97.32L8.85 16h4.97l-.8 4.84a1 1 0 0 0 1.97.32l.86-5.16H20a1 1 0 1 0 0-2h-3.82l.67-4H21a1 1 0 1 0 0-2h-3.82l.8-4.84a1 1 0 1 0-1.97-.32L15.15 8h-4.97l.8-4.84ZM14.15 14l.67-4H9.85l-.67 4h4.97Z" clip-rule="evenodd" class=""></path></svg>
+                        <span class="channelName">${channel.name}</span>
+                    </a>`;
+            }).join("\n");
             break;
         case "DEL_MSG":
             if("messageID" in eventData.data){
@@ -146,8 +157,8 @@ function message(data, scroll, previousMessage){
     if(data.error) return console.error(data.error);
     if (!previousMessage) previousMessage = {
         ID: "0",
-        userID: messageContainer.children[messageContainer.children.length - 1].children[0].getAttribute('data-user'),
-        createdAt: messageContainer.children[messageContainer.children.length - 1].children[0].getAttribute('data-time')
+        userID: messageContainer.children[messageContainer.children.length - 1]?.children[0]?.getAttribute('data-user') ?? "0",
+        createdAt: messageContainer.children[messageContainer.children.length - 1]?.children[0]?.getAttribute('data-time') ?? "0"
     }
     if (data.ID !== previousMessage.ID  && data.userID === previousMessage.userID && +previousMessage.createdAt + 300_000 > +data.createdAt) {
         messageContainer.innerHTML += `<div class="message" id="${data.ID}" oncontextmenu="openMessageContext(event, this)">
