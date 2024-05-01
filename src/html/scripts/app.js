@@ -61,6 +61,7 @@ function onMessage(event){
             userProfile.innerHTML = `<img class="exitable" src="/resource/user/${eventData.data.user.ID}?size=64">
             <h2 class="exitable" style="float: left;">${eventData.data.user.username}#${eventData.data.user.discriminator??"0"}</h2>`;
             ws.send(JSON.stringify({opCode: "GET_MEM"}));
+            ws.send(JSON.stringify({opCode: "GET_SER"}));
             //Intentional fallthrough.
         case "HRT":
             if(eventData.data.version !== version){
@@ -96,6 +97,9 @@ function onMessage(event){
             messageContainer.innerHTML = '';
             eventData.data.messages.map(msg => message(msg));
             messageContainer.setAttribute("loaded", "true");
+            break;
+        case "GET_SER":
+            console.log(eventData.data.server);
             break;
         case "DEL_MSG":
             if("messageID" in eventData.data){
