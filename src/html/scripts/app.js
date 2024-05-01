@@ -263,6 +263,24 @@ closeDanger.onclick = () => {
 
 function sendMessage(message) {
     if(message.length < 1) return;
+    message = message
+        .split(" ")
+        .map(word => {
+            if(word.startsWith("@") && word !== "@SYSTEM"){
+                let id;
+                if(word.split("#").length > 1){
+                    //Discriminator provided
+                    id = Object.keys(userStore).find(key => userStore[key].username === word.split("#")[0].substring(1) && userStore[key].discriminator === word.split("#")[1]);
+                } else {
+                    //Best effort
+                    id = Object.keys(userStore).find(key => userStore[key].username === word.substring(1));
+                }
+                return id !== undefined ? `<@${id}>` : word;
+            } else {
+                return word;
+            }
+        })
+        .join(" ");
     ws.send(JSON.stringify({
         opCode: "MSG",
         data: {
