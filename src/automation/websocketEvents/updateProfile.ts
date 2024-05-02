@@ -31,7 +31,10 @@ export default class UpdateProfile extends WebsocketEvent {
 
         ws.send(JSON.stringify({
             opCode: "UPD_PRF",
-            data: {user}
+            data: {
+                user,
+                online: "ONLINE"
+            }
         }));
 
         const queue: Promise<boolean>[] = [];
@@ -42,7 +45,10 @@ export default class UpdateProfile extends WebsocketEvent {
                     if(!user) return res(false);
                     x.send(JSON.stringify({
                         opCode: "UPD_MEM",
-                        data: {user}
+                        data: {
+                            user,
+                            online: "ONLINE"
+                        }
                     }));
                     res(true);
                 }
