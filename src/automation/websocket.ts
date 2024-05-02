@@ -72,8 +72,6 @@ const init = async (srv)=>{
             server.clients.forEach(x => {
                 queue.push(new Promise(async res => {
                     if(x.readyState === WebSocket.OPEN){
-                        const user = await readDatabase("users",x.tid) as User;
-                        if(!user) return res(false);
                         x.send(JSON.stringify({
                             opCode: "UPD_MEM",
                             data: {

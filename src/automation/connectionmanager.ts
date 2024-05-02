@@ -38,12 +38,11 @@ setInterval(()=>{
         if(x.session !== inspect.sessionSecret || Date.now() - x.heartbeat > 1000*15){
             connections.delete(x.id);
             //console.log(`${x.id} lost connection.`);
+            const user = await readDatabase("users",x.id) as User;
             const queue: Promise<boolean>[] = [];
-            server.clients.forEach(x => {
+            server.clients.forEach(y => {
                 queue.push(new Promise(async res => {
-                    if(x.readyState === WebSocket.OPEN){
-                        const user = await readDatabase("users",x.tid) as User;
-                        if(!user) return res(false);
+                    if(y.readyState === WebSocket.OPEN){
                         x.send(JSON.stringify({
                             opCode: "UPD_MEM",
                             data: {
