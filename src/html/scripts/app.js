@@ -185,7 +185,7 @@ function message(data, scroll, previousMessage){
 }
 
 function formatContent(content, message) {
-    content = DOMPurify.sanitize(linkifyHtml(content, {target: "_blank"}),{ ALLOWED_TAGS: ['a'], ALLOWED_ATTR: ['target','href'] });
+    content = linky(DOMPurify.sanitize(content));
     const mentionRgx = /&lt;@[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}&gt;/gmi;
     let m;
     do {
@@ -196,20 +196,23 @@ function formatContent(content, message) {
             content = content.replace(new RegExp(m[0],"g"),`<span id="mention_${id}_${message.ID}" class="mention" oncontextmenu="openUserContext(event, this)" onclick="openUserPopup('${id}', this)" data-user="${id}">@${userStore[id].username}</span>`);
         }
     } while (m);
-    const url = "https://raw.githubusercontent.com/TenDRILLL/Headpat/uwu/src/html/styles/banner.png";
-    if(url){
-        fetch(url).then(resp => {
-            resp.blob().then(rawBuff =>{
-                if(rawBuff.type.startsWith("image/")){
-                    content += ` <img src="${url}" />`
-                }
-                console.log(content);
-                return content;
-            });
-        });
-    } else {
-        return content;
+    return content;
+}
+
+function linky(content) {
+    const links = linkify.find(content);
+    const anchors = [...content.matchAll(/<a (.*?)<\/a>/g)];
+    for (const index in links) {
+        const link = links[index];
+        const anchor = anchors[index]?.at(0);
+        if (anchor && anchor.includes(link.href)) {
+            content = content.replace(anchor, `${anchor.replaceAll('<', '&lt;').replaceAll('>', '&gt;')}`);
+            continue;
+        }
+        content = content.replace(link.href, `<a href="${link.href}" target="_blank">${link.href}</a>`);
+        content += `<img src="${link.href}" onerror="this.remove()" />`;
     }
+    return content;
 }
 
 const toast = document.getElementById("snackbar");
@@ -342,6 +345,7 @@ if (isMobile) {
     document.body.style.minHeight = "100%";
     leftContainer.style = 'display: none; width: 100%; max-width: 100vw;';
     userContainer.style = 'display: none; width: 100%; min-width: 100%; max-width: 100vw;';
+    document.getElementById('messages').style.maxWidth = '100vw';
     leftToggle.style.display = "block";
     mobileSend.style.display = "block";
     mobileSend.addEventListener("click", () => {
