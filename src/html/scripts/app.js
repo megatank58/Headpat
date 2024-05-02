@@ -53,7 +53,6 @@ function onMessage(event){
             clearTimeout(heart);
             clearTimeout(memb);
             heart = setInterval(sendHeartbeat, 5000);
-            memb = setInterval(getMembers, 20_000);
             //needed to get currentUser, currentServer and currentChannel from other files
             document.headpat = {};
             currentUser = eventData.data.user;
@@ -66,12 +65,17 @@ function onMessage(event){
             setUserProfile(eventData.data.user);
             ws.send(JSON.stringify({opCode: "GET_MEM"}));
             ws.send(JSON.stringify({opCode: "GET_SER"}));
+            ws.send(JSON.stringify({opCode: "GET_MSG"}));
             //Intentional fallthrough.
         case "HRT":
             if(eventData.data.version !== version){
                 showToast("Version out of date, reloading in 5 seconds...");
                 return setTimeout(() => location.reload(), 5000);
             }
+            break;
+        case "UPD_MEM":
+            userStore[eventData.data.user.ID] = eventData.data.user;
+            //TODO Update the shit
             break;
         case "GET_MEM":
             function userSort(a, b) {
@@ -94,7 +98,6 @@ function onMessage(event){
                     </div>`;
                 });
             }
-            ws.send(JSON.stringify({opCode: "GET_MSG"}));
             break;
         case "GET_MSG":
             messageContainer.innerHTML = '';
@@ -193,7 +196,20 @@ function formatContent(content, message) {
             content = content.replace(new RegExp(m[0],"g"),`<span id="mention_${id}_${message.ID}" class="mention" oncontextmenu="openUserContext(event, this)" onclick="openUserPopup('${id}', this)" data-user="${id}">@${userStore[id].username}</span>`);
         }
     } while (m);
-    return content;
+    const url = "https://raw.githubusercontent.com/TenDRILLL/Headpat/uwu/src/html/styles/banner.png";
+    if(url){
+        fetch(url).then(resp => {
+            resp.blob().then(rawBuff =>{
+                if(rawBuff.type.startsWith("image/")){
+                    content += ` <img src="${url}" />`
+                }
+                console.log(content);
+                return content;
+            });
+        });
+    } else {
+        return content;
+    }
 }
 
 const toast = document.getElementById("snackbar");
