@@ -11,10 +11,19 @@ resourceRouter.get("/user/:userId", async (req, res)=>{
     /*if(req.params.userId === undefined){
         return res.status(400);
     }
-    //Upcoming: get user pfp from datastring from db
-    readDatabase("users", req.params.userId).then(user => {
 
-    }).catch(e => res.sendFile(""));*/
+    readDatabase("users", req.params.userId).then(user => {
+        if(user === null) return res.status(404);
+        if(user.profilePicture === undefined) return res.sendFile(`TMPx${req.query.size || 128}.png`, {root: `${__dirname}/../html/styles/`});
+        fetch(user.profilePicture).then(resp => {
+            resp.blob().then(rawBuff =>{
+                res.type(rawBuff.type);
+                rawBuff.arrayBuffer().then(buff => {
+                    res.send(Buffer.from(buff));
+                });
+            });
+        });
+    });*/
 });
 
 resourceRouter.get("/:resourceName", (req, res)=>{
