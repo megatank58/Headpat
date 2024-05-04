@@ -53,7 +53,6 @@ function onMessage(event){
             clearTimeout(heart);
             clearTimeout(memb);
             heart = setInterval(sendHeartbeat, 5000);
-            memb = setInterval(getMembers, 20_000);
             //needed to get currentUser, currentServer and currentChannel from other files
             document.headpat = {};
             currentUser = eventData.data.user;
@@ -66,6 +65,7 @@ function onMessage(event){
             setUserProfile(eventData.data.user);
             ws.send(JSON.stringify({opCode: "GET_MEM"}));
             ws.send(JSON.stringify({opCode: "GET_SER"}));
+            ws.send(JSON.stringify({opCode: "GET_MSG"}));
             //Intentional fallthrough.
         case "HRT":
             if(eventData.data.version !== version){
@@ -73,14 +73,24 @@ function onMessage(event){
                 return setTimeout(() => location.reload(), 5000);
             }
             break;
+        case "UPD_MEM":
+            const user = eventData.data.user;
+            userStore[user.ID] = user;
+            document.querySelectorAll(`[data-userID="${user.ID}"]`).forEach(element => {
+                if (element.classList.contains('messageAvatar')) element.src = `/resource/user/${user.ID}`;
+                if (element.classList.contains('messageUsername')) element.innerText = user.username;
+                if (element.classList.contains('mention')) element.innerText = `@${user.username}`;
+                if (element.classList.contains('user')) ws.send(JSON.stringify({opCode: "GET_MEM"}));
+            })
+            break;
         case "GET_MEM":
             function userSort(a, b) {
                 return a.user.username.toLowerCase() < b.user.username.toLowerCase() ? -1 : a.user.username.toLowerCase() > b.user.username.toLowerCase() ? 1 : 0;
             }
-            userContainer.innerHTML = "";
             const onlineUsers = eventData.data.memberList.filter((x) => x.online === 'ONLINE').sort(userSort);
             const offlineUsers = eventData.data.memberList.filter((x) => x.online === 'OFFLINE').sort(userSort);
             const roles = {ONLINE: onlineUsers, OFFLINE: offlineUsers};
+            userContainer.innerHTML = "";
             for (const role of Object.keys(roles)) {
                 userContainer.innerHTML += `<span>${role.toUpperCase()} — ${roles[role].length}</span>`;
                 roles[role].map((entry) => {
@@ -89,12 +99,11 @@ function onMessage(event){
                     let cssActive = popup.getAttribute('data-user') === entry.user.ID && popup.getAttribute('openedBy') !== 'user' && !popup.getAttribute('openedBy').includes('_') ? 'true' : '';
                     cssActive = document.getElementById('userCtx')['data-opener'] = `user_${entry.user.ID}`;
                     userContainer.innerHTML += `
-                    <div css-active="${cssActive}" class="user ${entry.online} exitable" id="user_${entry.user.ID}" onclick="openUserPopup('${entry.user.ID}', this)" oncontextmenu="openUserContext(event, this)">
+                    <div data-userID="${entry.user.ID}" css-active="${cssActive}" class="user ${entry.online} exitable" id="user_${entry.user.ID}" onclick="openUserPopup('${entry.user.ID}', this)" oncontextmenu="openUserContext(event, this)">
                     <img src="/resource/user/${entry.user.ID}?size=32"><div class="userStatus"></div><span>${entry.user.username}</span>
                     </div>`;
                 });
             }
-            ws.send(JSON.stringify({opCode: "GET_MSG"}));
             break;
         case "GET_MSG":
             messageContainer.innerHTML = '';
@@ -173,8 +182,8 @@ function message(data, scroll, previousMessage){
         cssActive = document.getElementById('messageCtx')["data-messageID"] === `${data.ID}` || userCtx["data-opener"] === `messageAvatar_${data.ID}` || userCtx["data-opener"] === `messageUsername_${data.ID}` ? 'true' : cssActive;
         messageContainer.innerHTML += `<div class="message" id="${data.ID}" oncontextmenu="openMessageContext(event, this)" css-active="${cssActive}">
         <div style="display:none;" data-user="${data.userID}" data-time="${data.createdAt}"></div>
-        <img oncontextmenu="openUserContext(event, this)" id="messageAvatar_${data.ID}" class="messageAvatar" src="/resource/user/${data.userID}?size=32" onclick="openUserPopup('${data.userID}', this)" />
-        <div class="messageContainer"><span oncontextmenu="openUserContext(event, this)" id="messageUsername_${data.ID}" class="messageUsername" onclick="openUserPopup('${data.userID}', this)">${userStore[data.userID]?.username ?? data.userID}</span>
+        <img data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageAvatar_${data.ID}" class="messageAvatar" src="/resource/user/${data.userID}?size=32" onclick="openUserPopup('${data.userID}', this)" />
+        <div class="messageContainer"><span data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageUsername_${data.ID}" class="messageUsername" onclick="openUserPopup('${data.userID}', this)">${userStore[data.userID]?.username ?? data.userID}</span>
         <span class="messageTimeSent">${parseTimestamp(data.createdAt)}</span></div></div>`;
         document.getElementById(`${data.ID}`).children[2].innerHTML += `<pre>${formatContent(data.content, data)}</pre>`;
     }
@@ -190,7 +199,7 @@ function formatContent(content, message) {
         if (m) {
             let id = m[0].substring(5,m[0].length-4);
             if (id === currentUser.ID) document.getElementById(`${message.ID}`).classList.add('mentions-you')
-            content = content.replace(new RegExp(m[0],"g"),`<span id="mention_${id}_${message.ID}" class="mention" oncontextmenu="openUserContext(event, this)" onclick="openUserPopup('${id}', this)" data-user="${id}">@${userStore[id].username}</span>`);
+            content = content.replace(new RegExp(m[0],"g"),`<span id="mention_${id}_${message.ID}" data-userID="${id}" class="mention" oncontextmenu="openUserContext(event, this)" onclick="openUserPopup('${id}', this)" data-user="${id}">@${userStore[id].username}</span>`);
         }
     } while (m);
     return content;
@@ -207,7 +216,7 @@ function linky(content) {
             continue;
         }
         content = content.replace(link.href, `<a href="${link.href}" target="_blank">${link.href}</a>`);
-        content += `<img src="${link.href}" onerror="this.remove()" />`;
+        content += `<img height="350px" src="${link.href}" onerror="this.remove()" onload="this.setAttribute('height', '')" />`;
     }
     return content;
 }

@@ -4,13 +4,15 @@ import Auth from "../../structs/Auth";
 import {readDatabase, writeDatabase} from "../database";
 import {compare} from "bcrypt";
 import {updatePass} from "../authmanager";
+import {WebSocket} from "ws";
+import User from "../../structs/User";
 
 export default class UpdateProfile extends WebsocketEvent {
     constructor() {
         super("UPD_PRF");
     }
 
-    async exec(event, ws) {
+    async exec(event, ws, args) {
         const user = await getUser(ws.tid);
         const auth: Auth | null = await readDatabase("auth",ws.tid) as Auth;
         if(auth.passHash && event.data.oldPass && event.data.newPass){
@@ -29,7 +31,28 @@ export default class UpdateProfile extends WebsocketEvent {
 
         ws.send(JSON.stringify({
             opCode: "UPD_PRF",
-            data: {user}
+            data: {
+                user,
+                online: "ONLINE"
+            }
         }));
+
+        const queue: Promise<boolean>[] = [];
+        args.server.clients.forEach(x => {
+            queue.push(new Promise(async res => {
+                if(x.readyState === WebSocket.OPEN){
+                    if(!user) return res(false);
+                    x.send(JSON.stringify({
+                        opCode: "UPD_MEM",
+                        data: {
+                            user,
+                            online: "ONLINE"
+                        }
+                    }));
+                    res(true);
+                }
+            }));
+        });
+        Promise.all(queue);
     }
 }
