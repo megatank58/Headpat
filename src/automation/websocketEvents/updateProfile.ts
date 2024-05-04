@@ -41,7 +41,6 @@ export default class UpdateProfile extends WebsocketEvent {
         args.server.clients.forEach(x => {
             queue.push(new Promise(async res => {
                 if(x.readyState === WebSocket.OPEN){
-                    if(!user) return res(false);
                     x.send(JSON.stringify({
                         opCode: "UPD_MEM",
                         data: {
