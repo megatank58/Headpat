@@ -6,6 +6,7 @@ ws.onclose = onClose;
 ws.onerror = onError;
 let heart, memb, currentUser, currentChannel, currentServer;
 let version = "";
+let initialStage = 0;
 
 let userStore = {};
 
@@ -49,6 +50,7 @@ function onMessage(event){
             message(eventData.data, true);
             break;
         case "ACK":
+            initialStage = 0;
             hideToast();
             clearTimeout(heart);
             clearTimeout(memb);
@@ -63,9 +65,7 @@ function onMessage(event){
             document.headpat["currentChannel"] = eventData.data.state.currentChannel;
             if(version === "") {version = eventData.data.version;}
             setUserProfile(eventData.data.user);
-            ws.send(JSON.stringify({opCode: "GET_MEM"}));
             ws.send(JSON.stringify({opCode: "GET_SER"}));
-            ws.send(JSON.stringify({opCode: "GET_MSG"}));
             //Intentional fallthrough.
         case "HRT":
             if(eventData.data.version !== version){
@@ -104,6 +104,10 @@ function onMessage(event){
                     </div>`;
                 });
             }
+            if(initialStage === 0){
+                initialStage++;
+                ws.send(JSON.stringify({opCode: "GET_MSG"}));
+            }
             break;
         case "GET_MSG":
             messageContainer.innerHTML = '';
@@ -120,6 +124,9 @@ function onMessage(event){
                         <span class="channelName">${channel.name}</span>
                     </a>`;
             }).join("\n");
+            if(initialStage === 0){
+                ws.send(JSON.stringify({opCode: "GET_MEM"}));
+            }
             break;
         case "DEL_MSG":
             if("messageID" in eventData.data){
