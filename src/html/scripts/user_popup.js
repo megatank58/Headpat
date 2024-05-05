@@ -57,20 +57,26 @@ function openUserPopup(userID, element, editable) {
         const saveButton = document.getElementById(`saveProfile`);
         status.classList.add(userStatus);
         status.classList.remove(userStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
-        avatar.src = `/resource/user/${userID}?size=128`;
+        avatar.src = `${user.avatar}`;
         avatar.addEventListener("click", () => avatarInput.click());
         banner.addEventListener("click", () => bannerInput.click());
         avatarInput.addEventListener('change', () => {
             const reader = new FileReader();
             //event.target.result should be the images blob
-            reader.onload = (event) => avatarBlob = event.target.result;
-            reader.readAsText(avatarInput.files[0]);
+            reader.onload = (event) => {
+                avatarBlob = event.target.result;
+                avatar.src = avatarBlob;
+            }
+            reader.readAsDataURL(avatarInput.files[0]);
         });
         bannerInput.addEventListener('change', () => {
             const reader = new FileReader();
             //event.target.result should be the images blob
-            reader.onload = (event) => bannerBlob = event.target.result;
-            reader.readAsText(bannerInput.files[0]);
+            reader.onload = (event) => {
+                bannerBlob = event.target.result;
+                banner.src = bannerBlob;
+            }
+            reader.readAsDataURL(bannerInput.files[0]);
         });
         saveButton.addEventListener("click", () => {
             const data = {};
@@ -97,7 +103,7 @@ function openUserPopup(userID, element, editable) {
         const discriminator = document.getElementById(`userPopupDiscriminator`);
         const joined = document.getElementById(`userPopupJoined`);
         const status = document.getElementById(`userPopupStatus`);
-        avatar.src = `/resource/user/${userID}?size=128`;
+        avatar.src = `${user.avatar}`;
         status.classList.add(userStatus);
         status.classList.remove(userStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
         username.innerHTML = user.username ?? "Nya";
