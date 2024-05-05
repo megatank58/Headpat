@@ -43,7 +43,7 @@ setInterval(()=>{
             server.clients.forEach(y => {
                 queue.push(new Promise(async res => {
                     if(y.readyState === WebSocket.OPEN){
-                        x.send(JSON.stringify({
+                        y.send(JSON.stringify({
                             opCode: "UPD_MEM",
                             data: {
                                 user,

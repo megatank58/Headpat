@@ -4,7 +4,7 @@
     <div id="userPopupNonEditable" class="userPopupMain" style="display: none;">
         <div class="userPopupTop">
             <img id="userPopupBanner" class="userPopupBanner" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
-            <img id="userPopupAvatar" class="userPopupAvatar" />
+            <img id="userPopupAvatar" />
             <div id="userPopupStatus" class="userPopupStatus" ></div>
         </div>
         <div class="userPopupBottom">
@@ -20,17 +20,19 @@
     <!-- Only shows when you are editing your profile -->
     <div id="userPopupEditable" class="userPopupMain" style="display: none;">
         <div class="userPopupTop">
-            <input id="userPopupAvatarInput" type="file">
-            <input id="userPopupAvatarInput" type="file">
-            <img id="userPopupBannerEditable" class="userPopupBanner" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
-            <img id="userPopupAvatarEditable" class="userPopupAvatar" src="./resource/user/<%= user.ID %>" />
+            <input id="userPopupBannerInput" type="file" accept="image/*">
+            <input id="userPopupAvatarInput" type="file" accept="image/*">
+            <img id="userPopupBannerEditable" class="userPopupBanner editable" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
+            <div id="userPopupAvatarContainer">
+                <img id="userPopupAvatarEditable" class="editable" src="./resource/user/<%= user.ID %>" />
+            </div>
             <div id="userPopupStatusEditable" class="userPopupStatus" ></div>
         </div>
         <div class="userPopupBottom">
             <span class="sectionHeader">Username</span>
-            <input id="userPopupUsernameInput" placeholder="Username" value="<%= user.username ?? "" %>"></input>
+            <input id="userPopupUsernameInput" placeholder="Username" maxlength="32" value="<%= user.username ?? "" %>"></input>
             <span class="sectionHeader">Discriminator</span>
-            <input id="userPopupDiscriminatorInput" placeholder="Discriminator" value="<%= user.discriminator ?? "" %>"></input>
+            <input id="userPopupDiscriminatorInput" placeholder="Discriminator" maxlength="4" value="<%= user.discriminator ?? "" %>"></input>
             <!-- <span class="sectionHeader">Email</span>
             <input id="userPopupEmail" placeholder="Email"></input> -->
             <span class="sectionHeader">Password</span>
