@@ -9,13 +9,18 @@ let dbs: {[key: string]: Keyv | null} = {
     "servers": null,
     "messages": null,
     "channels": null,
-    "regcode": null
+    "regcode": null,
+    "images": null
 };
 
 const initDatabase = async () => {
     Object.keys(dbs).forEach(key => {
         //Considering moving DB to a MySQL DB, using SQLite for now.
-        dbs[key] = new Keyv(`sqlite://${process.env.DATABASE}`, {namespace: key});
+        if(key === "images"){
+            dbs[key] = new Keyv(`sqlite://${process.env.MEMBER_ASSET_DATABASE}`, {namespace: key});
+        } else {
+            dbs[key] = new Keyv(`sqlite://${process.env.DATABASE}`, {namespace: key});
+        }
         dbs[key]!.on("error", (e)=>{
             console.log(e);
             console.log("Database error!");

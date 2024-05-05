@@ -1,11 +1,28 @@
 import User from "../structs/User";
 import {rawDatabase, readDatabase, writeDatabase} from "./database";
 import Server from "../structs/Server";
+import UserAssets from "../structs/UserAssets";
 
 const getUser = async (id): Promise<User> => {
     return new Promise((res)=>{
-        readDatabase("users",id).then(async user => {
+        readDatabase("users",id).then(async (user: User) => {
+            const assets = await getUserAssets(id);
+            Object.keys(assets).forEach(x => {
+                user[x] = assets[x];
+            });
             res(user === null ? await createUser(id) : user as User);
+        });
+    });
+};
+
+const getUserAssets = async (id): Promise<UserAssets> => {
+    return new Promise((res)=>{
+        readDatabase("images",id).then(async assets => {
+            if(assets === null){
+                await writeDatabase("images",id,{id});
+                assets = {id};
+            }
+            res(assets as UserAssets);
         });
     });
 };
@@ -55,5 +72,6 @@ const findFreeDiscriminator = (name) => {
 
 export {
     getUser,
-    getUserCount
+    getUserCount,
+    getUserAssets
 }
