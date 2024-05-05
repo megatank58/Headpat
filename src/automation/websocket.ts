@@ -9,6 +9,7 @@ import User from "../structs/User";
 
 let server;
 //Remember to increment this when publishing an update to enforce a reload of clients.
+
 const version = "1.3.1_000";
 
 const init = async (srv)=>{
