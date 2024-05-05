@@ -58,6 +58,7 @@ function openUserPopup(userID, element, editable) {
         status.classList.add(userStatus);
         status.classList.remove(userStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
         avatar.src = `${user.avatar}`;
+        banner.src = `${user.banner}`;
         avatar.addEventListener("click", () => avatarInput.click());
         banner.addEventListener("click", () => bannerInput.click());
         avatarInput.addEventListener('change', () => {
@@ -98,12 +99,13 @@ function openUserPopup(userID, element, editable) {
         popupEditable.style.display = 'none';
         popupNonEditable.style.display = 'flex';
         const avatar = document.getElementById(`userPopupAvatar`);
-        //const banner = document.getElementById(`userPopupBanner`);
+        const banner = document.getElementById(`userPopupBanner`);
         const username = document.getElementById(`userPopupUsername`);
         const discriminator = document.getElementById(`userPopupDiscriminator`);
         const joined = document.getElementById(`userPopupJoined`);
         const status = document.getElementById(`userPopupStatus`);
         avatar.src = `${user.avatar}`;
+        banner.src = `${user.banner}`;
         status.classList.add(userStatus);
         status.classList.remove(userStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
         username.innerHTML = user.username ?? "Nya";
