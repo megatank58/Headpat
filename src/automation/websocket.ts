@@ -1,14 +1,15 @@
-import {WebSocketServer} from "ws";
+import {WebSocket, WebSocketServer} from "ws";
 import {jwtVerify} from "jose";
 import {readDatabase} from "./database";
 import Auth from "../structs/Auth";
 import {getUser} from "./usermanager";
 import {loadWebsocketEvents} from "./websocketEventLoader";
-import {hasConnection, setConnection} from "./connectionmanager";
+import {hasConnection, setConnection, initConnectionManager} from "./connectionmanager";
+import User from "../structs/User";
 
 let server;
 //Remember to increment this when publishing an update to enforce a reload of clients.
-const version = "1.2.0_000";
+const version = "1.3.0_000";
 
 const init = async (srv)=>{
     const events = await loadWebsocketEvents();
@@ -16,6 +17,8 @@ const init = async (srv)=>{
         noServer: true,
         perMessageDeflate: false
     });
+    initConnectionManager(server);
+
 
     srv.on("upgrade", (req, socket, head) => {
         server.handleUpgrade(req, socket, head, (ws) => {
@@ -65,6 +68,22 @@ const init = async (srv)=>{
                     }
                 }
             }));
+            const queue: Promise<boolean>[] = [];
+            server.clients.forEach(x => {
+                queue.push(new Promise(async res => {
+                    if(x.readyState === WebSocket.OPEN){
+                        x.send(JSON.stringify({
+                            opCode: "UPD_MEM",
+                            data: {
+                                user,
+                                online: "ONLINE"
+                            }
+                        }));
+                        res(true);
+                    }
+                }));
+            });
+            Promise.all(queue);
         }).catch((e) => {
             console.log(e);
             ws.close();

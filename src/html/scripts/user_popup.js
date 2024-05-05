@@ -45,6 +45,9 @@ function openUserPopup(userID, element, editable) {
         popupNonEditable.style.display = 'none';
         const avatar = document.getElementById(`userPopupAvatarEditable`);
         const banner = document.getElementById(`userPopupBannerEditable`);
+        const avatarInput = document.getElementById(`userPopupAvatarInput`);
+        const bannerInput = document.getElementById(`userPopupBannerInput`);
+        let avatarBlob, bannerBlob;
         const status = document.getElementById(`userPopupStatusEditable`);
         const usernameInput = document.getElementById(`userPopupUsernameInput`);
         const discriminatorInput = document.getElementById(`userPopupDiscriminatorInput`);
@@ -54,17 +57,33 @@ function openUserPopup(userID, element, editable) {
         const saveButton = document.getElementById(`saveProfile`);
         status.classList.add(userStatus);
         status.classList.remove(userStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
-        avatar.src = `/resource/user/${userID}?size=128`
-        avatar.addEventListener("click", () => {
-            showToast("Change PFP is a Work-In-Progress", false, 5);
+        avatar.src = `${user.avatar}`;
+        avatar.addEventListener("click", () => avatarInput.click());
+        banner.addEventListener("click", () => bannerInput.click());
+        avatarInput.addEventListener('change', () => {
+            const reader = new FileReader();
+            //event.target.result should be the images blob
+            reader.onload = (event) => {
+                avatarBlob = event.target.result;
+                avatar.src = avatarBlob;
+            }
+            reader.readAsDataURL(avatarInput.files[0]);
         });
-        banner.addEventListener("click", () => {
-            showToast("Change Banner is a Work-In-Progress", false, 5);
+        bannerInput.addEventListener('change', () => {
+            const reader = new FileReader();
+            //event.target.result should be the images blob
+            reader.onload = (event) => {
+                bannerBlob = event.target.result;
+                banner.src = bannerBlob;
+            }
+            reader.readAsDataURL(bannerInput.files[0]);
         });
         saveButton.addEventListener("click", () => {
             const data = {};
-            if(usernameInput.value.length > 0) data["username"] = usernameInput.value;
-            if(discriminatorInput.value.length > 0) data["discriminator"] = discriminatorInput.value;
+            if(avatarBlob) data["avatar"] = avatarBlob;
+            if(bannerBlob) data["banner"] = bannerBlob;
+            if(usernameInput.value.length > 2) data["username"] = usernameInput.value;
+            if(discriminatorInput.value.length > 3) data["discriminator"] = discriminatorInput.value;
             if(newPassword.value.length > 0){
                 if(oldPassword.value.length > 0){
                     //Complain to user.
@@ -84,7 +103,7 @@ function openUserPopup(userID, element, editable) {
         const discriminator = document.getElementById(`userPopupDiscriminator`);
         const joined = document.getElementById(`userPopupJoined`);
         const status = document.getElementById(`userPopupStatus`);
-        avatar.src = `/resource/user/${userID}?size=128`;
+        avatar.src = `${user.avatar}`;
         status.classList.add(userStatus);
         status.classList.remove(userStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
         username.innerHTML = user.username ?? "Nya";

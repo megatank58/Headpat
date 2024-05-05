@@ -1,24 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
 
-:root {
-    --bg-0: hsl(220, 7%, 8%);
-    --bg-1: hsl(225, 6%, 13%);
-    --bg-2: hsl(228, 7%, 15%);
-    --bg-3: hsl(220, 7%, 18%);
-    --bg-4: hsl(223, 7%, 21%);
-    --bg-5: hsl(225, 7%, 24%);
-    --font-color-1: rgb(255, 255, 255);
-    --font-color-2: rgb(241, 242, 244);
-    --font-color-3: rgb(181, 186, 193);
-    --font-color-4: rgb(148, 155, 164);
-    --font-color-5: rgb(128, 132, 142);
-
-    --user-online: hsl(145, 65%, 39%);
-    --user-offline: rgb(128, 132, 142);
-
-    --blurple: rgb(82, 90, 220);
-}
-
 * {
     /* Font weights dont work without this for some reason >:( */
     font-family: 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -175,6 +156,7 @@ body {
     user-select: none;
     -moz-user-select: none;
     -webkit-user-select: none;
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 8px 16px 0px;
 }
 
 #messageCtx li, #userCtx li {
@@ -530,9 +512,22 @@ div:has(> #serverNameContainer) {
     overflow: hidden;
 }
 
+#userPopup[data-customPopup="true"] {
+    background: var(--bg-1);
+    padding: 4px;
+    background-clip: unset;
+    overflow: auto;
+}
+
 .userPopupMain {
     height: 100%;
     flex-direction: column;
+}
+
+#userPopup[data-customPopup="true"] .userPopupMain {
+    border-radius: 6px;
+    background-clip: content-box;
+    overflow: hidden;
 }
 
 .userPopupTop {
@@ -551,10 +546,10 @@ div:has(> #serverNameContainer) {
     inset: 0;
     width: 100%;
     height: 64px;
-    background-color: black;
+    background-color: rgb(117, 105, 105);
 }
 
-.userPopupAvatar {
+#userPopupAvatar {
     border-radius: 50%;
     width: 80px;
     height: 80px;
@@ -565,13 +560,40 @@ div:has(> #serverNameContainer) {
     background-color: black;
 }
 
+#userPopupAvatarContainer {
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    padding: 5px;
+    z-index: 100;
+    margin: 10px 0 0 10px;
+    box-sizing: border-box;
+    background-color: var(--bg-1);
+}
+
+#userPopupAvatarEditable {
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    background-color: black;
+}
+
+.editable {
+    cursor: pointer;
+    transition: all linear 200ms;
+}
+
+.editable:hover {
+    filter: brightness(0.5) blur(1px);
+}
+
 .userPopupStatus {
     position: absolute;
     background-color: var(--user-offline);
     border: 6px solid var(--bg-1);
     width: 28px;
     height: 28px;
-    z-index: 101;
+    z-index: 102;
     top: 70px;
     left: 70px;
     border-radius: 50%;
@@ -711,6 +733,7 @@ div:has(> #serverNameContainer) {
     padding: 0px;
     display: flex;
     position: relative;
+    color: var(--font-color-2);
 }
 
 .message[css-active="true"], .message:has(>[css-active="true"]), .message:has(>div>[css-active="true"]) {

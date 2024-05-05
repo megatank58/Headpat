@@ -1,9 +1,8 @@
-import User from "./User";
-
 export default class Member {
     ID: string;
     username: string;
-    profilePicture?: string;
+    avatar: string;
+    banner: string;
     discriminator: string;
     role: string;
     createdAt: string;
