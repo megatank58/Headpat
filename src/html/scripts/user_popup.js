@@ -63,14 +63,20 @@ function openUserPopup(userID, element, editable) {
         avatarInput.addEventListener('change', () => {
             const reader = new FileReader();
             //event.target.result should be the images blob
-            reader.onload = (event) => avatarBlob = event.target.result;
-            reader.readAsText(avatarInput.files[0]);
+            reader.onload = (event) => {
+                avatarBlob = event.target.result;
+                avatar.src = avatarBlob;
+            }
+            reader.readAsDataURL(avatarInput.files[0]);
         });
         bannerInput.addEventListener('change', () => {
             const reader = new FileReader();
             //event.target.result should be the images blob
-            reader.onload = (event) => bannerBlob = event.target.result;
-            reader.readAsText(bannerInput.files[0]);
+            reader.onload = (event) => {
+                bannerBlob = event.target.result;
+                banner.src = bannerBlob;
+            }
+            reader.readAsDataURL(bannerInput.files[0]);
         });
         saveButton.addEventListener("click", () => {
             const data = {};

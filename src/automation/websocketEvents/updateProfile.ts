@@ -5,7 +5,7 @@ import {readDatabase, writeDatabase} from "../database";
 import {compare} from "bcrypt";
 import {updatePass} from "../authmanager";
 import {WebSocket} from "ws";
-import User from "../../structs/User";
+import Member from "../../structs/Member";
 
 export default class UpdateProfile extends WebsocketEvent {
     constructor() {
@@ -13,7 +13,7 @@ export default class UpdateProfile extends WebsocketEvent {
     }
 
     async exec(event, ws, args) {
-        const user = await getUser(ws.tid);
+        const user: Member = await getUser(ws.tid);
         const auth: Auth | null = await readDatabase("auth",ws.tid) as Auth;
         if(auth.passHash && event.data.oldPass && event.data.newPass){
             const validPass = await compare(event.data.oldPass, auth.passHash);
@@ -25,6 +25,12 @@ export default class UpdateProfile extends WebsocketEvent {
         }
         if(event.data.discriminator){
             user.discriminator = event.data.discriminator;
+        }
+        if(event.data.avatar){
+            user.avatar = event.data.avatar;
+        }
+        if(event.data.banner){
+            user.banner = event.data.banner;
         }
         await writeDatabase("users", ws.tid, user);
         await writeDatabase("auth", ws.tid, auth);
