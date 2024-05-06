@@ -77,7 +77,7 @@ function onMessage(event){
             const user = eventData.data.user;
             userStore[user.ID] = user;
             document.querySelectorAll(`[data-userID="${user.ID}"]`).forEach(element => {
-                if (element.classList.contains('messageAvatar')) element.src = `${user.avatar}`;
+                if (element.classList.contains('messageAvatar')) element.src = `/resource/user/${user.ID}/avatar?size=64`;
                 if (element.classList.contains('messageUsername')) element.innerText = user.username;
                 if (element.classList.contains('mention')) element.innerText = `@${user.username}`;
                 if (element.classList.contains('user')) ws.send(JSON.stringify({opCode: "GET_MEM"}));
@@ -100,7 +100,7 @@ function onMessage(event){
                     cssActive = document.getElementById('userCtx')['data-opener'] = `user_${entry.user.ID}`;
                     userContainer.innerHTML += `
                     <div data-userID="${entry.user.ID}" css-active="${cssActive}" class="user ${entry.online} exitable" id="user_${entry.user.ID}" onclick="openUserPopup('${entry.user.ID}', this)" oncontextmenu="openUserContext(event, this)">
-                    <img src="${entry.user.avatar}"><div class="userStatus"></div><span>${entry.user.username}</span>
+                    <img src="/resource/user/${entry.user.ID}/avatar?size=64"><div class="userStatus"></div><span>${entry.user.username}</span>
                     </div>`;
                 });
             }
@@ -142,7 +142,7 @@ function onMessage(event){
 }
 
 function setUserProfile(user) {
-    userProfile.innerHTML = `<img class="exitable" src="${user.avatar}">
+    userProfile.innerHTML = `<img class="exitable" src="/resource/user/${user.ID}/avatar?size=64">
     <div class="exitable" style="float: left;"><span id="userUsername">${user.username}</span><span id="userDiscriminator">#${user.discriminator??"0"}</span></div>`;
 }
 
@@ -189,7 +189,7 @@ function message(data, scroll, previousMessage){
         cssActive = document.getElementById('messageCtx')["data-messageID"] === `${data.ID}` || userCtx["data-opener"] === `messageAvatar_${data.ID}` || userCtx["data-opener"] === `messageUsername_${data.ID}` ? 'true' : cssActive;
         messageContainer.innerHTML += `<div class="message" id="${data.ID}" oncontextmenu="openMessageContext(event, this)" css-active="${cssActive}">
         <div style="display:none;" data-user="${data.userID}" data-time="${data.createdAt}"></div>
-        <img data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageAvatar_${data.ID}" class="messageAvatar" src="${userStore[data.userID].avatar}" onclick="openUserPopup('${data.userID}', this)" />
+        <img data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageAvatar_${data.ID}" class="messageAvatar" src="/resource/user/${data.ID}/avatar?size=64" onclick="openUserPopup('${data.userID}', this)" />
         <div class="messageContainer"><span data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageUsername_${data.ID}" class="messageUsername" onclick="openUserPopup('${data.userID}', this)">${userStore[data.userID]?.username ?? data.userID}</span>
         <span class="messageTimeSent">${parseTimestamp(data.createdAt)}</span></div></div>`;
         document.getElementById(`${data.ID}`).children[2].innerHTML += `<pre>${formatContent(data.content, data)}</pre>`;
