@@ -1,12 +1,12 @@
 import WebsocketEvent from "../../structs/WebsocketEvent";
-import {getUser, getUserAssets} from "../usermanager";
+import {getUser} from "../usermanager";
 import Auth from "../../structs/Auth";
 import {readDatabase, writeDatabase} from "../database";
 import {compare} from "bcrypt";
 import {updatePass} from "../authmanager";
 import {WebSocket} from "ws";
 import Member from "../../structs/Member";
-import UserAssets from "../../structs/UserAssets";
+import Jimp from "jimp";
 
 export default class UpdateProfile extends WebsocketEvent {
     constructor() {
@@ -15,7 +15,6 @@ export default class UpdateProfile extends WebsocketEvent {
 
     async exec(event, ws, args) {
         const user: Member = await getUser(ws.tid);
-        const userAssets: UserAssets = await getUserAssets(ws.tid);
         const auth: Auth | null = await readDatabase("auth",ws.tid) as Auth;
         if(auth.passHash && event.data.oldPass && event.data.newPass){
             const validPass = await compare(event.data.oldPass, auth.passHash);
@@ -33,14 +32,27 @@ export default class UpdateProfile extends WebsocketEvent {
         await writeDatabase("users", ws.tid, user);
 
         if(event.data.avatar){
-            userAssets.avatar = event.data.avatar;
-            user.avatar = event.data.avatar;
+            Jimp.read(Buffer.from(event.data.avatar.split(",")[1], "base64"))
+                .then(async img => {
+                    const sizes = [512, 256, 128, 64, 32];
+                    const save: Promise<boolean>[] = [];
+                    sizes.forEach(size => {
+                        save.push(new Promise(async (res) => {
+                            img.resize(size, size);
+                            await img.writeAsync(`${__dirname}/../../${process.env.MEMBER_ASSET_LOCATION}/${user.ID[0]}/${user.ID}-avatar-${size}.png`);
+                            res(true);
+                        }));
+                    });
+                    await Promise.all(save);
+                }).catch(e => console.error(e));
         }
         if(event.data.banner){
-            userAssets.banner = event.data.banner;
-            user.banner = event.data.banner;
+            Jimp.read(Buffer.from(event.data.banner.split(",")[1], "base64"))
+                .then(async img => {
+                    img.resize(340, 120);
+                    await img.writeAsync(`${__dirname}/../../${process.env.MEMBER_ASSET_LOCATION}/${user.ID[0]}/${user.ID}-banner.png`);
+                }).catch(e => console.error(e));
         }
-        await writeDatabase("images",ws.tid,userAssets);
 
         ws.send(JSON.stringify({
             opCode: "UPD_PRF",
