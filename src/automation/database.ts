@@ -9,8 +9,7 @@ let dbs: {[key: string]: Keyv | null} = {
     "servers": null,
     "messages": null,
     "channels": null,
-    "regcode": null,
-    "images": null
+    "regcode": null
 };
 
 const initDatabase = async () => {
