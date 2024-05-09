@@ -57,20 +57,27 @@ function openUserPopup(userID, element, editable) {
         const saveButton = document.getElementById(`saveProfile`);
         status.classList.add(userStatus);
         status.classList.remove(userStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
-        avatar.src = `/resource/user/${userID}?size=128`;
+        avatar.src = `/resource/user/${user.ID}/avatar?size=64`;
+        banner.src = `/resource/user/${user.ID}/banner`;
         avatar.addEventListener("click", () => avatarInput.click());
         banner.addEventListener("click", () => bannerInput.click());
-        avatarInput.addEventListener('change', () => {
+        avatarInput.addEventListener('input', () => {
             const reader = new FileReader();
             //event.target.result should be the images blob
-            reader.onload = (event) => avatarBlob = event.target.result;
-            reader.readAsText(avatarInput.files[0]);
+            reader.onload = (event) => {
+                avatarBlob = event.target.result;
+                avatar.src = avatarBlob;
+            }
+            reader.readAsDataURL(avatarInput.files[0]);
         });
-        bannerInput.addEventListener('change', () => {
+        bannerInput.addEventListener('input', () => {
             const reader = new FileReader();
             //event.target.result should be the images blob
-            reader.onload = (event) => bannerBlob = event.target.result;
-            reader.readAsText(bannerInput.files[0]);
+            reader.onload = (event) => {
+                bannerBlob = event.target.result;
+                banner.src = bannerBlob;
+            }
+            reader.readAsDataURL(bannerInput.files[0]);
         });
         saveButton.addEventListener("click", () => {
             const data = {};
@@ -92,12 +99,13 @@ function openUserPopup(userID, element, editable) {
         popupEditable.style.display = 'none';
         popupNonEditable.style.display = 'flex';
         const avatar = document.getElementById(`userPopupAvatar`);
-        //const banner = document.getElementById(`userPopupBanner`);
+        const banner = document.getElementById(`userPopupBanner`);
         const username = document.getElementById(`userPopupUsername`);
         const discriminator = document.getElementById(`userPopupDiscriminator`);
         const joined = document.getElementById(`userPopupJoined`);
         const status = document.getElementById(`userPopupStatus`);
-        avatar.src = `/resource/user/${userID}?size=128`;
+        avatar.src = `/resource/user/${user.ID}/avatar?size=64`;
+        banner.src = `/resource/user/${user.ID}/banner`;
         status.classList.add(userStatus);
         status.classList.remove(userStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
         username.innerHTML = user.username ?? "Nya";

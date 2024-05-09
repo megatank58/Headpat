@@ -1,5 +1,4 @@
-
-const theme = localStorage.getItem("theme") || 'dark-mode';
+const theme = localStorage.getItem("theme") || 'dark';
 const link = document.getElementById('themeLink');
 
-link.href = `/resource/${theme}.css`;
+link.href = `/resource/${theme}-theme.css`;

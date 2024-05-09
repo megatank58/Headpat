@@ -4,7 +4,7 @@ import Server from "../structs/Server";
 
 const getUser = async (id): Promise<User> => {
     return new Promise((res)=>{
-        readDatabase("users",id).then(async user => {
+        readDatabase("users",id).then(async (user: User) => {
             res(user === null ? await createUser(id) : user as User);
         });
     });
@@ -24,7 +24,7 @@ const createUser = async (id): Promise<User> => {
     return new Promise(async (res, rej)=>{
         const exists = await readDatabase("users", id).catch(e => console.log(e));
         if(exists !== null) rej("USER_EXISTS");
-        const user = {
+        const user: User = {
             ID: id,
             username: "Nya",
             discriminator: await findFreeDiscriminator("Nya"),
@@ -37,7 +37,7 @@ const createUser = async (id): Promise<User> => {
             srv.members.push(id);
             await writeDatabase("servers","0",srv);
         });
-        res(user);
+        res(user as User);
     });
 };
 

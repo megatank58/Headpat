@@ -1,29 +1,30 @@
 import {Router} from "express";
-import {readdirSync} from "fs";
-import {readDatabase} from "../automation/database";
+import {readdirSync, access as check} from "fs";
+
 
 const resourceRouter = Router();
 
-resourceRouter.get("/user/:userId", async (req, res)=>{
-    if (req.query.size && !["32", "64", "128", "256", "512"].includes(req.query.size as string)) return res.sendFile("TMPx128.png", {root: `${__dirname}/../html/styles/`})
-    return res.sendFile(`TMPx${req.query.size || 128}.png`, {root: `${__dirname}/../html/styles/`});
-    //This isn't implemented yet. Just thoughts
-    /*if(req.params.userId === undefined){
+resourceRouter.get("/user/:userId/:asset", async (req, res)=>{
+    if(req.params.userId === undefined || req.params.asset === undefined){
         return res.status(400);
     }
-
-    readDatabase("users", req.params.userId).then(user => {
-        if(user === null) return res.status(404);
-        if(user.profilePicture === undefined) return res.sendFile(`TMPx${req.query.size || 128}.png`, {root: `${__dirname}/../html/styles/`});
-        fetch(user.profilePicture).then(resp => {
-            resp.blob().then(rawBuff =>{
-                res.type(rawBuff.type);
-                rawBuff.arrayBuffer().then(buff => {
-                    res.send(Buffer.from(buff));
-                });
+    if(req.query.size && !["32", "64", "128", "256", "512"].includes(req.query.size as string)) req.query.size = "128";
+    const file = `${req.params.userId[0]}/${req.params.userId}-${req.params.asset}${req.query.size === undefined ? "":`-${req.query.size}`}.png`;
+    const path = `${__dirname}/../${process.env.MEMBER_ASSET_LOCATION}/`;
+    const placeholder = `0/0-${req.params.asset}${req.query.size === undefined ? "":`-${req.query.size}`}.png`;
+    check(`${path}${file}`, function(err) {
+        if (err === null) {
+            return res.sendFile(file, {root: path});
+        } else {
+            check(`${path}${placeholder}`, function(err) {
+                if (err === null) {
+                    return res.sendFile(placeholder, {root: path});
+                } else {
+                    return res.status(404);
+                }
             });
-        });
-    });*/
+        }
+    });
 });
 
 resourceRouter.get("/:resourceName", (req, res)=>{

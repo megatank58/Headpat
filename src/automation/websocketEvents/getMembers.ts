@@ -23,7 +23,6 @@ export default class GetMembers extends WebsocketEvent {
                 user: {
                     ID: x.ID,
                     username: x.username,
-                    profilePicture: x.profilePicture,
                     discriminator: x.discriminator,
                     role: x.role,
                     createdAt: x.createdAt
