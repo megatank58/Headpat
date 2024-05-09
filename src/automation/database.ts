@@ -44,7 +44,14 @@ const initDatabase = async () => {
                 {
                     ID: "0",
                     name: "dev",
+                    type: "TEXT",
                     messages: [],
+                    permissions: []
+                },{
+                    ID: "1",
+                    name: "dev-vc",
+                    type: "AUDIO",
+                    connected: [],
                     permissions: []
                 }
             ],
