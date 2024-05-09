@@ -1,0 +1,22 @@
+:root {
+    --bg-0: #000000;
+    --bg-1: #0b0b0c;
+    --bg-2: #000000;
+    --bg-3: #000000;
+    --bg-4: #000000;
+    --bg-5: #0c0c0d;
+    --font-color-1: rgb(255, 255, 255);
+    --font-color-2: rgb(241, 242, 244);
+    --font-color-3: rgb(181, 186, 193);
+    --font-color-4: rgb(148, 155, 164);
+    --font-color-5: rgb(128, 132, 142);
+
+    --user-online: hsl(145, 65%, 39%);
+    --user-offline: rgb(128, 132, 142);
+
+    --blurple: rgb(82, 90, 220);
+}
+
+.channel.active {
+    background-color: var(--bg-1) !important;
+}

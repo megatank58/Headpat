@@ -1,5 +1,5 @@
 import {Router} from "express";
-import {readdirSync, stat as check} from "fs";
+import {readdirSync, access as check} from "fs";
 
 
 const resourceRouter = Router();
@@ -12,11 +12,11 @@ resourceRouter.get("/user/:userId/:asset", async (req, res)=>{
     const file = `${req.params.userId[0]}/${req.params.userId}-${req.params.asset}${req.query.size === undefined ? "":`-${req.query.size}`}.png`;
     const path = `${__dirname}/../${process.env.MEMBER_ASSET_LOCATION}/`;
     const placeholder = `0/0-${req.params.asset}${req.query.size === undefined ? "":`-${req.query.size}`}.png`;
-    check(`${path}${file}`, function(err, stat) {
+    check(`${path}${file}`, function(err) {
         if (err === null) {
             return res.sendFile(file, {root: path});
         } else {
-            check(`${path}${placeholder}`, function(err, stat) {
+            check(`${path}${placeholder}`, function(err) {
                 if (err === null) {
                     return res.sendFile(placeholder, {root: path});
                 } else {

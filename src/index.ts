@@ -37,6 +37,11 @@ app.use("/", indexRouter);
 import {initDatabase} from "./automation/database";
 initDatabase();
 
+/* ------------- EMOJIMAP ------------- */
+
+import {initEmojiMap} from "./automation/emojimap";
+initEmojiMap();
+
 /* ------------- START ------------- */
 
 const srv = app.listen(port, ()=>{

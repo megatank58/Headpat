@@ -1,0 +1,32 @@
+:root {
+    --bg-0: #ffffff;
+    --bg-1: #e3e5e8;
+    --bg-2: #ebedef;
+    --bg-3: #f2f3f5;
+    --bg-4: #ffffff;
+    --bg-5: #ebedef;
+    --font-color-1: #060607;
+    --font-color-2: #060607;
+    --font-color-3: #5c5e66;
+    --font-color-4: #5c5e66;
+    --font-color-5: #848892;
+
+    --user-online: hsl(145, 65%, 39%);
+    --user-offline: rgb(128, 132, 142);
+
+    --blurple: rgb(82, 90, 220);
+}
+
+.channel.active {
+    background-color: rgba(128, 132, 142, 0.24) !important;
+}
+
+.mention {
+    color: rgb(88, 101, 242) !important;
+    background-color: rgba(88, 101, 242, 0.15) !important;
+}
+
+.mention:hover {
+    color: #ffffff !important;
+    background-color: rgb(88, 101, 242) !important;
+}
