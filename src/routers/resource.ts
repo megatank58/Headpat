@@ -33,13 +33,13 @@ resourceRouter.get("/:resourceName", (req, res)=>{
     }
     const styles = readdirSync("./html/styles");
     const scripts = readdirSync("./html/scripts");
-    const images = readdirSync("./html/images");
+    const assets = readdirSync("./html/assets");
     if(styles.includes(req.params.resourceName)){
         res.sendFile(req.params.resourceName, {root: `${__dirname}/../html/styles/`});
     } else if (scripts.includes(req.params.resourceName)) {
         res.sendFile(req.params.resourceName, {root: `${__dirname}/../html/scripts/`});
-    } else if (images.includes(req.params.resourceName)) {
-        res.sendFile(req.params.resourceName, {root: `${__dirname}/../html/images/`});
+    } else if (assets.includes(req.params.resourceName)) {
+        res.sendFile(req.params.resourceName, {root: `${__dirname}/../html/assets/`});
     } else {
         return res.status(404);
     }
