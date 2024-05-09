@@ -3,15 +3,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/resource/app.css" rel="stylesheet">
     <link id="themeLink" href="/resource/dark-mode.css" rel="stylesheet">
-    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous"> -->
     <title>Headpat</title>
     <meta property="og:title" content="Headpat" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://headpat.tentti.xyz/" />
-    <meta property="og:image" content="/resource/banner.png" />
-    <link rel="icon" type="image/x-icon" href="/resource/banner.png">
+    <meta property="og:image" content="/resource/banner.jpg" />
+    <link rel="icon" type="image/x-icon" href="/resource/banner.jpg">
     <meta property="og:description" content="The 'cool' Discord inspired chat application!" />
     <meta name="theme-color" content="#0d6efd">
+    <meta charset="utf-8">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" as="script" />
+    <link rel="preload" href="/resource/emoji_manager.js" as="script" />
+    <link rel="preload" href="/resource/app.js" as="script" />
 </head>
 <body>
 <%- include("./navbar_in"); %>
@@ -29,10 +32,10 @@
             <div id="serverList">
                 <div id="serverContainer">
                     <div class="server active">
-                        <img src="/resource/banner.png" width="48" height="48" />
+                        <img loading="lazy" src="/resource/banner.avif" onerror="this.src = '/resource/banner.jpg'" width="48" height="48" />
                     </div>
                     <div class="server">
-                        <img src="/resource/banner.png" width="48" height="48" />
+                        <img loading="lazy" src="/resource/banner.avif" onerror="this.src = '/resource/banner.jpg'" width="48" height="48" />
                     </div>
                 </div>
             </div>
@@ -71,6 +74,15 @@
                     <!-- messageFiledPlaceholder should be placed somewhere after messageField -->
                     <div id="messageField" class="text-input" role="textbox" aria-multiline="true" spellcheck="true" aria-haspopup="listbox" aria-invalid="false" aria-autocomplete="list" contenteditable="true" ondragenter="event.preventDefault(); event.dataTransfer.dropEffect = 'none'" ondragover="event.preventDefault(); event.dataTransfer.dropEffect = 'none'"></div>
                     <!-- mobileSend only shows and only works on mobile -->
+                    <%- include("./emoji_picker"); %>
+                    <div id="messageSenderButtons">
+                        <div id="emojiPickerToggle">
+                            <div id="emojiPickerToggleSpriteContainer">
+                                <div id="emojiPickerToggleColor"></div>
+                                <div id="emojiPickerToggleGreyscale"></div>
+                            </div>
+                        </div>
+                    </div>
                     <div id="mobileSend">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 100 100">
                             <path d="M5.1,90.8l7.6-32.9c0.3-1.4,1.5-2.5,3-2.7l42.5-4.4c1.2-0.1,1.2-1.9,0-2.1l-42.5-4.1c-1.5-0.1-2.7-1.2-3-2.6  L5.1,9.2C4.4,6.4,7.4,4.1,10,5.4l83.1,41.6c2.5,1.3,2.5,4.9,0,6.2L10,94.6C7.4,95.9,4.4,93.6,5.1,90.8z"/>
@@ -87,8 +99,9 @@
 <%- include("./user_popup"); %>
 <script src="/resource/app.js"></script>
 <script src="/resource/theme.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script src="/resource/emoji_manager.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/linkifyjs@4.1.3/dist/linkify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js"></script>
 </body>
 </html>

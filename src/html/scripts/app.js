@@ -8,6 +8,9 @@ let heart, memb, currentUser, currentChannel, currentServer;
 let version = "";
 let initialStage = 0;
 
+document.headpat = {};
+document.headpat["messageStore"] = {};
+
 let userStore = {};
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -56,7 +59,6 @@ function onMessage(event){
             clearTimeout(memb);
             heart = setInterval(sendHeartbeat, 5000);
             //needed to get currentUser, currentServer and currentChannel from other files
-            document.headpat = {};
             currentUser = eventData.data.user;
             document.headpat["currentUser"] = eventData.data.user;
             currentServer = eventData.data.state.currentServer;
@@ -100,7 +102,7 @@ function onMessage(event){
                     cssActive = document.getElementById('userCtx')['data-opener'] = `user_${entry.user.ID}`;
                     userContainer.innerHTML += `
                     <div data-userID="${entry.user.ID}" css-active="${cssActive}" class="user ${entry.online} exitable" id="user_${entry.user.ID}" onclick="openUserPopup('${entry.user.ID}', this)" oncontextmenu="openUserContext(event, this)">
-                    <img src="/resource/user/${entry.user.ID}/avatar?size=64"><div class="userStatus"></div><span>${entry.user.username}</span>
+                    <img loading="lazy" src="/resource/user/${entry.user.ID}/avatar?size=64"><div class="userStatus"></div><span>${entry.user.username}</span>
                     </div>`;
                 });
             }
@@ -142,7 +144,7 @@ function onMessage(event){
 }
 
 function setUserProfile(user) {
-    userProfile.innerHTML = `<img class="exitable" src="/resource/user/${user.ID}/avatar?size=64">
+    userProfile.innerHTML = `<img loading="lazy" class="exitable" src="/resource/user/${user.ID}/avatar?size=64">
     <div class="exitable" style="float: left;"><span id="userUsername">${user.username}</span><span id="userDiscriminator">#${user.discriminator??"0"}</span></div>`;
 }
 
@@ -170,6 +172,7 @@ function parseTimestamp(timestamp, type){
 }
 
 function message(data, scroll, previousMessage){
+    document.headpat["messageStore"][data.ID] = data;
     if(data.error) return console.error(data.error);
     if (!previousMessage) previousMessage = {
         ID: "0",
@@ -189,7 +192,7 @@ function message(data, scroll, previousMessage){
         cssActive = document.getElementById('messageCtx')["data-messageID"] === `${data.ID}` || userCtx["data-opener"] === `messageAvatar_${data.ID}` || userCtx["data-opener"] === `messageUsername_${data.ID}` ? 'true' : cssActive;
         messageContainer.innerHTML += `<div class="message" id="${data.ID}" oncontextmenu="openMessageContext(event, this)" css-active="${cssActive}">
         <div style="display:none;" data-user="${data.userID}" data-time="${data.createdAt}"></div>
-        <img data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageAvatar_${data.ID}" class="messageAvatar" src="/resource/user/${data.userID}/avatar?size=64" onclick="openUserPopup('${data.userID}', this)" />
+        <img loading="lazy" data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageAvatar_${data.ID}" class="messageAvatar" src="/resource/user/${data.userID}/avatar?size=64" onclick="openUserPopup('${data.userID}', this)" />
         <div class="messageContainer"><span data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageUsername_${data.ID}" class="messageUsername" onclick="openUserPopup('${data.userID}', this)">${userStore[data.userID]?.username ?? data.userID}</span>
         <span class="messageTimeSent">${parseTimestamp(data.createdAt)}</span></div></div>`;
         document.getElementById(`${data.ID}`).children[2].innerHTML += `<pre>${formatContent(data.content, data)}</pre>`;
@@ -198,7 +201,7 @@ function message(data, scroll, previousMessage){
 }
 
 function formatContent(content, message) {
-    content = linky(DOMPurify.sanitize(content));
+    content = linky(message.ID, DOMPurify.sanitize(content));
     const mentionRgx = /&lt;@[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}&gt;/gmi;
     let m;
     do {
@@ -209,10 +212,18 @@ function formatContent(content, message) {
             content = content.replace(new RegExp(m[0],"g"),`<span id="mention_${id}_${message.ID}" data-userID="${id}" class="mention" oncontextmenu="openUserContext(event, this)" onclick="openUserPopup('${id}', this)" data-user="${id}">@${userStore[id].username}</span>`);
         }
     } while (m);
+    const emojiRegex = /:\w+:/g;
+    const messageEmojis = [...content.matchAll(emojiRegex)];
+    const emojilessContent = content.replaceAll(emojiRegex, '').replace(/^\s+|\s+$/g, "");
+    for (const emojiText of messageEmojis) {
+        const emojiData = document.headpat.emojis.emojiDefinitions.find((element) => element.names.find(name => name === `${emojiText}` ));
+        twemoji.className = emojilessContent.length === 0 && messageEmojis.length < 31 ? 'largeEmoji' : 'emoji';
+        content = content.replace(emojiText, twemoji.parse(emojiData.emoji));
+    }
     return content;
 }
 
-function linky(content) {
+function linky(messageID, content) {
     const links = linkify.find(content);
     const anchors = [...content.matchAll(/<a (.*?)<\/a>/g)];
     for (const index in links) {
@@ -223,9 +234,17 @@ function linky(content) {
             continue;
         }
         content = content.replace(link.href, `<a href="${link.href}" target="_blank">${link.href}</a>`);
-        content += `<img height="350px" src="${link.href}" onerror="this.remove()" onload="this.setAttribute('height', '')" />`;
+        content += `<img loading="lazy" height="350px" src="${link.href}" onerror="this.remove()" onload="handleImage(this, '${messageID}')" />`;
     }
     return content;
+}
+
+function handleImage(element, messageID) {
+    const message = document.headpat['messageStore'][messageID];
+    element.setAttribute('height', '');
+    if (message.content === element.src) {
+        element.parentElement.innerHTML = element.outerHTML.replace('onload="handleImage', 'data-old="');
+    }
 }
 
 const toast = document.getElementById("snackbar");
@@ -379,9 +398,11 @@ if (isMobile) {
 
 document.getElementById("userListToggle").addEventListener("click", () => {
     if (userContainer.style.display === "block" || !userContainer.style.display) {
+        document.getElementById("messages").style.maxWidth = "100%";
         if (isMobile) document.getElementById("messages").style.display = "flex";
         userContainer.style.display = "none";
     } else {
+        document.getElementById("messages").style = "";
         if (isMobile) document.getElementById("messages").style.display = "none";
         userContainer.style.display = "block";
     }
@@ -391,6 +412,7 @@ document.onclick = (event) => {
     closeMessageContextMenu();
     closeUserContextMenu();
     closePopup(event.target);
+    togglePicker(event.target);
 };
 
 document.oncontextmenu = (event) => {
@@ -402,6 +424,11 @@ window.onresize = () => {
     closeUserContextMenu();
     closePopup();
 };
+
+//to fix a chrome memory bug
+window.addEventListener('beforeunload', function () {
+    document = {};
+});
 
 function moveChat(user) {
     if (!user) return messageContainer.scrollTop = messageContainer.scrollHeight;
@@ -431,5 +458,5 @@ if (/firefox/i.test(navigator.userAgent)) {
     userContainer.style.scrollbarColor = 'var(--bg-1) var(--bg-3)';
     userContainer.style.scrollbarGutter = 'stable';
     userContainer.style.scrollbarWidth = 'thin';
-    setTimeout(() => showToast('You may experience a degraded experience on Firefox', false, 5), 2000);
+    setTimeout(() => showToast('You may have a degraded experience on Firefox', false, 5), 2000);
 }
