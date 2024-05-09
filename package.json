@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "tsc --build && npm run copyhtml && npm run copysecrets",
-    "copyhtml": "shx cp -r ./src/html/pages ./src/html/scripts ./src/html/styles ./dist/html",
+    "copyhtml": "shx cp -r ./src/html/pages ./src/html/scripts ./src/html/styles ./src/html/images ./dist/html",
     "copysecrets": "shx cp .env ./dist",
     "buildrun": "npm run build && npm run run",
     "run": "cd dist && node index.js",
