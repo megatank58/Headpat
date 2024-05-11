@@ -41,5 +41,5 @@ function copyMessage(idOnly) {
     const ctxMenu = document.getElementById("messageCtx");
     if(ctxMenu["data-messageID"] === undefined || ctxMenu["data-messageID"] === "") return;
     if (idOnly) return navigator.clipboard.writeText(ctxMenu["data-messageID"]);
-    navigator.clipboard.writeText(document.getElementById(ctxMenu["data-messageID"]).children[2].children[2]?.innerText ?? document.getElementById(ctxMenu["data-messageID"]).children[2].children[0].innerText);
+    navigator.clipboard.writeText(document.headpat["messageStore"][ctxMenu["data-messageID"]].content);
 }

@@ -61,7 +61,7 @@ function openUserPopup(userID, element, editable) {
         banner.src = `/resource/user/${user.ID}/banner`;
         avatar.addEventListener("click", () => avatarInput.click());
         banner.addEventListener("click", () => bannerInput.click());
-        avatarInput.addEventListener('change', () => {
+        avatarInput.addEventListener('input', () => {
             const reader = new FileReader();
             //event.target.result should be the images blob
             reader.onload = (event) => {
@@ -70,7 +70,7 @@ function openUserPopup(userID, element, editable) {
             }
             reader.readAsDataURL(avatarInput.files[0]);
         });
-        bannerInput.addEventListener('change', () => {
+        bannerInput.addEventListener('input', () => {
             const reader = new FileReader();
             //event.target.result should be the images blob
             reader.onload = (event) => {
