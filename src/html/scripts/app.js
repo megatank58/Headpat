@@ -78,8 +78,9 @@ function onMessage(event){
         case "UPD_MEM":
             const user = eventData.data.user;
             userStore[user.ID] = user;
+            let nonceu = Date.now();
             document.querySelectorAll(`[data-userID="${user.ID}"]`).forEach(element => {
-                if (element.classList.contains('messageAvatar')) element.src = `/resource/user/${user.ID}/avatar?size=64`;
+                if (element.classList.contains('avatar')) element.src = `/resource/user/${user.ID}/avatar?size=64&nonce=${nonceu}`;
                 if (element.classList.contains('messageUsername')) element.innerText = user.username;
                 if (element.classList.contains('mention')) element.innerText = `@${user.username}`;
                 if (element.classList.contains('user')) ws.send(JSON.stringify({opCode: "GET_MEM"}));
@@ -93,6 +94,7 @@ function onMessage(event){
             const offlineUsers = eventData.data.memberList.filter((x) => x.online === 'OFFLINE').sort(userSort);
             const roles = {ONLINE: onlineUsers, OFFLINE: offlineUsers};
             userContainer.innerHTML = "";
+            let nonce = Date.now();
             for (const role of Object.keys(roles)) {
                 userContainer.innerHTML += `<span>${role.toUpperCase()} — ${roles[role].length}</span>`;
                 roles[role].map((entry) => {
@@ -102,7 +104,7 @@ function onMessage(event){
                     cssActive = document.getElementById('userCtx')['data-opener'] = `user_${entry.user.ID}`;
                     userContainer.innerHTML += `
                     <div data-userID="${entry.user.ID}" css-active="${cssActive}" class="user ${entry.online} exitable" id="user_${entry.user.ID}" onclick="openUserPopup('${entry.user.ID}', this)" oncontextmenu="openUserContext(event, this)">
-                    <img loading="lazy" src="/resource/user/${entry.user.ID}/avatar?size=64"><div class="userStatus"></div><span>${entry.user.username}</span>
+                    <img onError="this.src='/resource/user/${entry.user.ID}/avatar?size=64&nonce=0'" data-userID="${entry.user.ID}" class="avatar" loading="lazy" src="/resource/user/${entry.user.ID}/avatar?size=64&nonce=${nonce}"><div class="userStatus"></div><span>${entry.user.username}</span>
                     </div>`;
                 });
             }
@@ -144,7 +146,7 @@ function onMessage(event){
 }
 
 function setUserProfile(user) {
-    userProfile.innerHTML = `<img loading="lazy" class="exitable" src="/resource/user/${user.ID}/avatar?size=64">
+    userProfile.innerHTML = `<img onError="this.src='/resource/user/${user.ID}/avatar?size=64&nonce=0'" data-userID="${user.ID}" loading="lazy" class="exitable avatar" src="/resource/user/${user.ID}/avatar?size=64">
     <div class="exitable" style="float: left;"><span id="userUsername">${user.username}</span><span id="userDiscriminator">#${user.discriminator??"0"}</span></div>`;
 }
 
@@ -192,7 +194,7 @@ function message(data, scroll, previousMessage){
         cssActive = document.getElementById('messageCtx')["data-messageID"] === `${data.ID}` || userCtx["data-opener"] === `messageAvatar_${data.ID}` || userCtx["data-opener"] === `messageUsername_${data.ID}` ? 'true' : cssActive;
         messageContainer.innerHTML += `<div class="message" id="${data.ID}" oncontextmenu="openMessageContext(event, this)" css-active="${cssActive}">
         <div style="display:none;" data-user="${data.userID}" data-time="${data.createdAt}"></div>
-        <img loading="lazy" data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageAvatar_${data.ID}" class="messageAvatar" src="/resource/user/${data.userID}/avatar?size=64" onclick="openUserPopup('${data.userID}', this)" />
+        <img onError="this.src='/resource/user/${data.userID}/avatar?size=64&nonce=0'" loading="lazy" data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageAvatar_${data.ID}" class="messageAvatar avatar" src="/resource/user/${data.userID}/avatar?size=64" onclick="openUserPopup('${data.userID}', this)" />
         <div class="messageContainer"><span data-userID="${data.userID}" oncontextmenu="openUserContext(event, this)" id="messageUsername_${data.ID}" class="messageUsername" onclick="openUserPopup('${data.userID}', this)">${userStore[data.userID]?.username ?? data.userID}</span>
         <span class="messageTimeSent">${parseTimestamp(data.createdAt)}</span></div></div>`;
         document.getElementById(`${data.ID}`).children[2].innerHTML += `<pre>${formatContent(data.content, data)}</pre>`;
