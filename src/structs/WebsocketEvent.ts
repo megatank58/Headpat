@@ -9,7 +9,7 @@ export default abstract class WebsocketEvent {
         return this.opcode;
     }
 
-    async exec(event, ws, args) {
+    async exec(event, ws, args, ...add) {
         return console.log(`${this.opcode} EXEC`);
     }
 }

@@ -4,14 +4,15 @@ import User from "../../structs/User";
 import Server from "../../structs/Server";
 import Message from "../../structs/Message";
 import {WebSocket} from "ws";
+import ImageMessage from "../../structs/ImageMessage";
 
 export default class MessageCreate extends WebsocketEvent {
     constructor() {
         super("MSG");
     }
 
-    async exec(event, ws, args) {
-        const msg: Message = {
+    async exec(event, ws, args, message: Message|ImageMessage) {
+        const msg: Message|ImageMessage = message ?? {
             ID: "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (parseInt(c) ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> parseInt(c) / 4).toString(16)),
             createdAt: Date.now().toString(),
             content: event.data.content,
@@ -26,7 +27,7 @@ export default class MessageCreate extends WebsocketEvent {
             }));
         });
 
-        async function sendMessage(message: Message){
+        async function sendMessage(message: Message|ImageMessage){
             return new Promise(async (res, rej)=>{
                 const author = await readDatabase("users",message.userID) as User;
                 if(!author) rej("NO_USER");
