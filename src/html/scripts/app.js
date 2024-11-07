@@ -47,7 +47,10 @@ function onMessage(event){
         return;
     }
     //console.log(eventData);
-    if(eventData.data.error) return console.error(data.error);
+    if(eventData.error) {
+        showToast(JSON.stringify(eventData.error), false, 5);
+        return console.error(eventData.error);
+    }
     switch(eventData.opCode){
         case "MSG":
             message(eventData.data, true);
@@ -142,6 +145,10 @@ function onMessage(event){
             document.getElementById("userPopupDiscriminator").value = eventData.data.user.discriminator ?? "";
             setUserProfile(eventData.data.user);
             showToast('Profile Saved', false, 2.5);
+            break;
+        case "IMG":
+            hideToast();
+            console.log(eventData);
     }
 }
 
@@ -461,4 +468,63 @@ if (/firefox/i.test(navigator.userAgent)) {
     userContainer.style.scrollbarGutter = 'stable';
     userContainer.style.scrollbarWidth = 'thin';
     setTimeout(() => showToast('You may have a degraded experience on Firefox', false, 5), 2000);
+}
+
+let hover, interval;
+let uploadoverlay = document.getElementById("file-upload");
+document.getElementById("channelContentContainer").ondragover = (e) => {
+    e.preventDefault();
+    clearInterval(interval);
+    interval = setInterval(()=>{
+        hover = false;
+        clearInterval(interval);
+
+        uploadoverlay.style = "";
+        console.log("LEAVE");
+    }, 100);
+
+    if(!hover){
+        hover = !hover;
+        console.log("ENTER");
+        uploadoverlay.style = "background-color: rgba(0,0,0,0.2); height: 100%; width: 1000000%; display: block;";
+    }
+}
+
+document.getElementById("channelContentContainer").ondrop = (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.items) {
+        [...e.dataTransfer.items].forEach((item, i) => {
+            if (item.kind === "file") {
+                const file = item.getAsFile();
+                if(checkIfImage(file)) uploadImage(file);
+            }
+        });
+    } else {
+        [...e.dataTransfer.files].forEach((file, i) => {
+            if(checkIfImage(file)) uploadImage(file);
+        });
+    }
+}
+
+function checkIfImage(file){
+    return ["image/png", "image/gif", "image/bmp", "image/jpeg"].includes(file.type);
+}
+
+function uploadImage(image){
+    console.log(image);
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(image);
+    reader.onload = () => {
+        const uint8Array = new Uint8Array(reader.result);
+        const base64String = btoa(
+            uint8Array.reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        ws.send(JSON.stringify({
+            opCode: "IMG",
+            data: {
+                buffer: base64String
+            }
+        }));
+        showToast("Image uploading, will be sent once uploaded.",true);
+    };
 }
