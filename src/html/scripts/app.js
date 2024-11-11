@@ -590,8 +590,9 @@ async function leave(){
 const { RTCPeerConnection, RTCSessionDescription } = window;
 const connections = {};
 let iceCache = {};
-
+let debugRTC = false;
 async function handleRTC(data){
+    if(debugRTC) console.log(data);
     switch(data.type){
         case "SEND_OFFER":
             const que = [];
@@ -655,7 +656,29 @@ async function unloadRTC(){
 
 async function createNewPeer(id){
     if(connections[id]) return;
-    const peerConnection = new RTCPeerConnection();
+    const peerConnection = new RTCPeerConnection({
+        iceServers:[
+            {
+                urls: ["turn:turn.anyfirewall.com:443?transport=tcp"],
+                credential: "webrtc",
+                username: "webrtc"
+            },
+            {
+                urls: ["turn:192.158.29.39:3478?transport=tcp"],
+                credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
+                username: "28224511:1379330808"
+            },
+            {
+                urls: [
+                    "stun:stun.l.google.com:19302",
+                    "stun:stun1.l.google.com:19302",
+                    "stun:stun2.l.google.com:19302",
+                    "stun:stun3.l.google.com:19302",
+                    "stun:stun4.l.google.com:19302",
+                ]
+            },
+        ]
+    });
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
     peerConnection.onicecandidate = ({candidate}) => {
