@@ -26,7 +26,7 @@ export default class RTC extends WebsocketEvent {
             case "JOIN":
                 if(!this.channels.has(data.channelID)) this.channels.set(data.channelID,[]);
                 let joinclients = this.channels.get(data.channelID);
-                /*if(joinclients.includes(ws.tid)){
+                if(joinclients.includes(ws.tid)){
                     return ws.send(JSON.stringify({
                         opCode: "RTC",
                         data: {
@@ -34,7 +34,7 @@ export default class RTC extends WebsocketEvent {
                             reason: `${ws.tid} already connected to WebRTC, please disconnect first.`
                         }
                     }));
-                }*/
+                }
                 ws.webrtcChannel = data.channelID;
                 joinclients.push(ws.tid);
                 this.channels.set(data.channelID, joinclients);
@@ -52,13 +52,6 @@ export default class RTC extends WebsocketEvent {
                         data: {
                             type: "JOIN",
                             user
-                        }
-                    }));
-                } else {
-                    ws.send(JSON.stringify({
-                        opCode: "RTC",
-                        data: {
-                            type: "ALONE"
                         }
                     }));
                 }

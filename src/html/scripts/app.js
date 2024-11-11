@@ -545,26 +545,26 @@ function uploadImage(image){
 }
 
 let rtcLoad = false;
-let channelId, connectId;
+let channelId;
 
 async function vcClick(id){
-    if(!channelId) join(id);
+    if(channelId){
+        let temp = channelId;
+        await leave();
+        if(temp !== id){
+            join(id);
+        } else {
+            await unloadRTC();
+        }
+    } else {
+        join(id);
+    }
 }
-
-const voiceChannelInfo = document.getElementById("voiceChannelInfo");
-const voiceChannelState = document.getElementById("voiceChannelState");
-const voiceChannelName = document.getElementById("voiceChannelName");
-const connections = {};
 
 async function join(id){
     if(!rtcLoad) await loadRTC();
-    const voice = document.getElementById(id);
     document.getElementById(id).style.color = "#0f0";
-    connectId = id;
-    voiceChannelInfo.style.display = "flex";
-    voiceChannelState.innerText = "RTC connecting: ";
-    voiceChannelState.style.color = "#cc0";
-    voiceChannelName.innerText = voice.querySelectorAll(`span`)[0].innerText;
+    channelId = id;
     send({
         opCode: "RTC",
         data: {
@@ -572,42 +572,31 @@ async function join(id){
             channelID: id
         }
     });
+    showToast(`Joined channel ${channelId}`,false,2);
 }
 
 async function leave(){
-    showToast(`Left channel ${channelId}`,false,2);
-    if(channelId || connectId){
-        document.getElementById(channelId ?? connectId).style.color = "rgb(128, 132, 142)";
-        channelId = undefined;
-        connectId = undefined;
-    }
-    document.getElementById("voiceChannelInfo").style.display = "none";
-    send(JSON.stringify({
+    document.getElementById(channelId).style.color = "rgb(128, 132, 142)";
+    ws.send(JSON.stringify({
         opCode: "RTC",
         data: {
             type: "LEAVE"
         }
     }));
-    Object.keys(connections).every(key =>{
-        connections[key].close();
-        delete connections[key];
-    });
+    showToast(`Left channel ${channelId}`,false,2);
+    channelId = undefined;
 }
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
+const connections = {};
 let iceCache = {};
+let iceCredentials;
 let debugRTC = false;
 async function handleRTC(data){
     if(debugRTC) console.log(data);
     switch(data.type){
-        case "ALONE":
-            channelId = connectId;
-            showToast(`Joined channel ${channelId}`,false,2);
-            voiceChannelState.innerText = "RTC waiting: ";
-            break;
         case "SEND_OFFER":
-            channelId = connectId;
-            showToast(`Joined channel ${channelId}`,false,2);
+            iceCredentials = data.iceCredentials;
             const que = [];
             data.members.forEach(member => {
                 que.push(createNewPeer(member));
@@ -633,6 +622,7 @@ async function handleRTC(data){
             await receiveCandidate(data);
             break;
         case "JOIN":
+            iceCredentials = data.iceCredentials;
             showToast(`${data.user.username} joined channel ${channelId}`,false,2);
             break;
         case "LEAVE":
@@ -658,7 +648,6 @@ async function loadRTC() {
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     localAudio.srcObject = localStream;
     rtcLoad = true;
-    voiceChannelInfo.style.display = "flex";
 }
 
 async function unloadRTC(){
@@ -669,12 +658,6 @@ async function unloadRTC(){
     }
     localAudio.srcObject = null;
     rtcLoad = false;
-    voiceChannelInfo.style.display = "none";
-    if(channelId || connectId){
-        document.getElementById(channelId ?? connectId).style.color = "rgb(128, 132, 142)";
-        channelId = undefined;
-        connectId = undefined;
-    }
 }
 
 async function createNewPeer(id){
@@ -696,7 +679,7 @@ async function createNewPeer(id){
                 ]
             },
         ],
-        /*iceTransportPolicy: "relay"*/
+        iceTransportPolicy: "relay"
     });
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
@@ -739,8 +722,6 @@ function createOffer(){
                 target: peer
             }
         });
-        voiceChannelState.innerText = "RTC connecting: ";
-        voiceChannelState.style.color = "#cc0";
     });
 }
 
@@ -758,8 +739,6 @@ function createAnswer(id, offer){
             }
             delete iceCache[id];
         }
-        voiceChannelState.innerText = "Connected: ";
-        voiceChannelState.style.color = "#0c0";
         res(answer);
     });
 }
@@ -773,8 +752,6 @@ async function receiveAnswer(id, answer){
         }
         delete iceCache[id];
     }
-    voiceChannelState.innerText = "Connected: ";
-    voiceChannelState.style.color = "#0c0";
 }
 
 function receiveCandidate(data) {
@@ -794,65 +771,4 @@ let bypass = null;
 function send(data){
     if(bypass !== null) data["bypass"] = bypass;
     ws.send(JSON.stringify(data));
-}
-
-let muted = false;
-const micButton = document.getElementById("micButton");
-const mute = document.getElementById("micMute");
-const unmute = document.getElementById("micUnmute");
-if(muted){
-    unmute.style.display = "none";
-    mute.style.display = "flex";
-} else {
-    mute.style.display = "none";
-    unmute.style.display = "flex";
-}
-
-
-micButton.onmouseover = (e)=>{
-    e.preventDefault();
-    if(!muted){
-        unmute.style.display = "none";
-        mute.style.display = "flex";
-    } else {
-        mute.style.display = "none";
-        unmute.style.display = "flex";
-    }
-}
-micButton.onmouseout = (e)=>{
-    e.preventDefault();
-    if(muted){
-        unmute.style.display = "none";
-        mute.style.display = "flex";
-    } else {
-        mute.style.display = "none";
-        unmute.style.display = "flex";
-    }
-}
-
-micButton.onclick = (e) => {
-    e.preventDefault();
-    muted = !muted;
-    localStream.getAudioTracks()[0].enabled = !muted;
-};
-
-const leaveButton = document.getElementById("leaveButton");
-const leaveIcon = document.getElementById("leaveIcon");
-const leaveConfirm = document.getElementById("leaveConfirm");
-leaveConfirm.style.display = "none";
-leaveIcon.style.display = "flex";
-
-leaveButton.onmouseover = (e)=>{
-    e.preventDefault();
-    leaveIcon.style.display = "none";
-    leaveConfirm.style.display = "flex";
-}
-leaveButton.onmouseout = (e)=>{
-    e.preventDefault();
-    leaveConfirm.style.display = "none";
-    leaveIcon.style.display = "flex";
-}
-leaveButton.onclick = (e)=>{
-    e.preventDefault();
-    leave();
 }
