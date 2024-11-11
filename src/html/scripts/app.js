@@ -131,7 +131,7 @@ function onMessage(event){
             document.getElementById("channelsContainer").innerHTML = eventData.data.server.channels.map(channel => {
                 switch(channel.type){
                     case "AUDIO":
-                        return `<a class="channel${currentChannel === channel.ID ? " active" : ""}" id="${channel.ID}" onclick="vcClick(${channel.ID})">
+                        return `<a class="channel${currentChannel === channel.ID ? " active" : ""}" id="${channel.ID}" onclick="vcClick('${channel.ID}')">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75 75" height="20" width="20" version="1.0">
 <path d="M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z" style="stroke: rgb(128, 132, 142);stroke-width:5;stroke-linejoin:round;fill: rgb(128, 132, 142);"/>
 <path d="M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6" style="fill:none;stroke: rgb(128, 132, 142);stroke-width:5;stroke-linecap:round"/>
