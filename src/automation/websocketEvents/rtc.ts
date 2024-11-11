@@ -1,7 +1,6 @@
 import WebsocketEvent from "../../structs/WebsocketEvent";
 import {WebSocket} from "ws";
 import {readDatabase} from "../database";
-import {createHmac} from "crypto";
 
 export default class RTC extends WebsocketEvent {
     channels = new Map();
@@ -40,20 +39,11 @@ export default class RTC extends WebsocketEvent {
                 joinclients.push(ws.tid);
                 this.channels.set(data.channelID, joinclients);
                 if(joinclients.length > 1){
-                    const username = `${Math.floor(Date.now()/1000)+(60*60)}:${ws.tid}`;
-                    const hmac = createHmac("sha1",process.env.ICE_SECRET as string ?? "SECRET");
-                    hmac.update(username);
-                    let iceCredentials = {
-                        username,
-                        credential: hmac.digest("base64"),
-                        urls: process.env.ICE_URL
-                    };
                     ws.send(JSON.stringify({
                         opCode: "RTC",
                         data: {
                             type: "SEND_OFFER",
-                            members: joinclients.filter(x => x !== ws.tid),
-                            iceCredentials
+                            members: joinclients.filter(x => x !== ws.tid)
                         }
                     }));
                     const user = await readDatabase("users",ws.tid);
@@ -61,8 +51,7 @@ export default class RTC extends WebsocketEvent {
                         opCode: "RTC",
                         data: {
                             type: "JOIN",
-                            user,
-                            iceCredentials
+                            user
                         }
                     }));
                 }
