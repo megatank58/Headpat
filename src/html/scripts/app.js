@@ -1,4 +1,4 @@
-const wsURL = `ws${location.host.startsWith("localhost")?"":"s"}://${location.host}`;
+const wsURL = `ws${location.host.startsWith("localhost")||location.host.startsWith("192.168")?"":"s"}://${location.host}`;
 let ws = new WebSocket(wsURL);
 ws.onopen = onOpen;
 ws.onmessage = onMessage;
@@ -565,13 +565,13 @@ async function join(id){
     if(!rtcLoad) await loadRTC();
     document.getElementById(id).style.color = "#0f0";
     channelId = id;
-    ws.send(JSON.stringify({
+    send({
         opCode: "RTC",
         data: {
             type: "JOIN",
             channelID: id
         }
-    }));
+    });
     showToast(`Joined channel ${channelId}`,false,2);
 }
 
@@ -590,11 +590,13 @@ async function leave(){
 const { RTCPeerConnection, RTCSessionDescription } = window;
 const connections = {};
 let iceCache = {};
+let iceCredentials;
 let debugRTC = false;
 async function handleRTC(data){
     if(debugRTC) console.log(data);
     switch(data.type){
         case "SEND_OFFER":
+            iceCredentials = data.iceCredentials;
             const que = [];
             data.members.forEach(member => {
                 que.push(createNewPeer(member));
@@ -604,14 +606,14 @@ async function handleRTC(data){
         case "OFFER":
             await createNewPeer(data.target);
             const answer = await createAnswer(data.target,data.offer);
-            ws.send(JSON.stringify({
+            send({
                 opCode: "RTC",
                 data: {
                     type: "ANSWER",
                     answer,
                     target: data.target
                 }
-            }));
+            });
             break;
         case "ANSWER":
             await receiveAnswer(data.target, data.answer);
@@ -620,6 +622,7 @@ async function handleRTC(data){
             await receiveCandidate(data);
             break;
         case "JOIN":
+            iceCredentials = data.iceCredentials;
             showToast(`${data.user.username} joined channel ${channelId}`,false,2);
             break;
         case "LEAVE":
@@ -662,23 +665,9 @@ async function createNewPeer(id){
     const peerConnection = new RTCPeerConnection({
         iceServers:[
             {
-                urls: ["turn:turn.anyfirewall.com:443?transport=tcp"],
-                credential: "webrtc",
-                username: "webrtc"
-            },
-            {
-                urls: ["turn:192.158.29.39:3478?transport=tcp"],
-                credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
-                username: "28224511:1379330808"
-            },
-            {
-                urls: [
-                    "stun:stun.l.google.com:19302",
-                    "stun:stun1.l.google.com:19302",
-                    "stun:stun2.l.google.com:19302",
-                    "stun:stun3.l.google.com:19302",
-                    "stun:stun4.l.google.com:19302",
-                ]
+                urls: iceCredentials.urls,
+                username: iceCredentials.username,
+                credential: iceCredentials.credential
             },
         ]
     });
@@ -686,13 +675,13 @@ async function createNewPeer(id){
 
     peerConnection.onicecandidate = ({candidate}) => {
         if (candidate) {
-            ws.send(JSON.stringify({
+            send({
                 opCode: "RTC",
                 data: {
                     type: "CANDIDATE",
                     candidate
                 }
-            }));
+            });
         }
     }
 
@@ -715,14 +704,14 @@ function createOffer(){
         const peerConnection = connections[peer];
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
-        ws.send(JSON.stringify({
+        send({
             opCode: "RTC",
             data: {
                 type: "OFFER",
                 offer,
                 target: peer
             }
-        }));
+        });
     });
 }
 
@@ -766,4 +755,10 @@ function receiveCandidate(data) {
         }
         res(true);
     });
+}
+
+let bypass = null;
+function send(data){
+    if(bypass !== null) data["bypass"] = bypass;
+    ws.send(JSON.stringify(data));
 }
