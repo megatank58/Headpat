@@ -9,7 +9,7 @@ import User from "../structs/User";
 
 let server;
 //Remember to increment this when publishing an update to enforce a reload of clients.
-const version = `1.6.1_152`;
+const version = `1.6.2_106`;
 
 const init = async (srv)=>{
     const events = await loadWebsocketEvents();
