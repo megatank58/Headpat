@@ -669,7 +669,8 @@ async function createNewPeer(id){
                 username: iceCredentials.username,
                 credential: iceCredentials.credential
             },
-        ]
+        ],
+        iceTransportPolicy: "relay"
     });
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
