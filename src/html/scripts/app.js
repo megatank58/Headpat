@@ -52,6 +52,9 @@ function onMessage(event){
         return console.error(eventData.error);
     }
     switch(eventData.opCode){
+        case "RTC":
+            handleRTC(eventData.data);
+            break;
         case "MSG":
             message(eventData.data, true);
             break;
@@ -126,10 +129,22 @@ function onMessage(event){
             document.getElementById("rightNavChannelName").innerText = eventData.data.server.channels[currentChannel].name;
             document.getElementById("messageFieldPlaceholder").innerText = `Message #${eventData.data.server.channels[currentChannel].name}`;
             document.getElementById("channelsContainer").innerHTML = eventData.data.server.channels.map(channel => {
-                return `<a class="channel${currentChannel === channel.ID ? " active" : ""}" id="${channel.ID}">
-                        <svg x="0" y="0" class="icon_ae0b42" aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M10.99 3.16A1 1 0 1 0 9 2.84L8.15 8H4a1 1 0 0 0 0 2h3.82l-.67 4H3a1 1 0 1 0 0 2h3.82l-.8 4.84a1 1 0 0 0 1.97.32L8.85 16h4.97l-.8 4.84a1 1 0 0 0 1.97.32l.86-5.16H20a1 1 0 1 0 0-2h-3.82l.67-4H21a1 1 0 1 0 0-2h-3.82l.8-4.84a1 1 0 1 0-1.97-.32L15.15 8h-4.97l.8-4.84ZM14.15 14l.67-4H9.85l-.67 4h4.97Z" clip-rule="evenodd" class=""></path></svg>
+                switch(channel.type){
+                    case "AUDIO":
+                        return `<a class="channel${currentChannel === channel.ID ? " active" : ""}" id="${channel.ID}" onclick="vcClick(${channel.ID})">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75 75" height="20" width="20" version="1.0">
+<path d="M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z" style="stroke: rgb(128, 132, 142);stroke-width:5;stroke-linejoin:round;fill: rgb(128, 132, 142);"/>
+<path d="M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6" style="fill:none;stroke: rgb(128, 132, 142);stroke-width:5;stroke-linecap:round"/>
+</svg>
                         <span class="channelName">${channel.name}</span>
                     </a>`;
+                    default:
+                        return `<a class="channel${currentChannel === channel.ID ? " active" : ""}" id="${channel.ID}">
+                        <svg x="0" y="0" class="icon_ae0b42" aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M10.99 3.16A1 1 0 1 0 9 2.84L8.15 8H4a1 1 0 0 0 0 2h3.82l-.67 4H3a1 1 0 1 0 0 2h3.82l-.8 4.84a1 1 0 0 0 1.97.32L8.85 16h4.97l-.8 4.84a1 1 0 0 0 1.97.32l.86-5.16H20a1 1 0 1 0 0-2h-3.82l.67-4H21a1 1 0 1 0 0-2h-3.82l.8-4.84a1 1 0 1 0-1.97-.32L15.15 8h-4.97l.8-4.84ZM14.15 14l.67-4H9.85l-.67 4h4.97Z" clip-rule="evenodd" class=""></path></svg>
+                        <span class="channelName">${channel.name}</span>
+                        </a>`;
+                }
+
             }).join("\n");
             if(initialStage === 0){
                 ws.send(JSON.stringify({opCode: "GET_MEM"}));
@@ -527,4 +542,202 @@ function uploadImage(image){
         }));
         showToast("Image uploading, will be sent once uploaded.",true);
     };
+}
+
+let rtcLoad = false;
+let channelId;
+
+async function vcClick(id){
+    if(channelId){
+        let temp = channelId;
+        await leave();
+        if(temp !== id){
+            join(id);
+        } else {
+            await unloadRTC();
+        }
+    } else {
+        join(id);
+    }
+}
+
+async function join(id){
+    if(!rtcLoad) await loadRTC();
+    document.getElementById(id).style.color = "#0f0";
+    channelId = id;
+    ws.send(JSON.stringify({
+        opCode: "RTC",
+        data: {
+            type: "JOIN",
+            channelID: id
+        }
+    }));
+    showToast(`Joined channel ${channelId}`,false,2);
+}
+
+async function leave(){
+    document.getElementById(channelId).style.color = "rgb(128, 132, 142)";
+    ws.send(JSON.stringify({
+        opCode: "RTC",
+        data: {
+            type: "LEAVE"
+        }
+    }));
+    showToast(`Left channel ${channelId}`,false,2);
+    channelId = undefined;
+}
+
+const { RTCPeerConnection, RTCSessionDescription } = window;
+const connections = {};
+let iceCache = {};
+
+async function handleRTC(data){
+    switch(data.type){
+        case "SEND_OFFER":
+            const que = [];
+            data.members.forEach(member => {
+                que.push(createNewPeer(member));
+            });
+            Promise.all(que).then(()=>createOffer(currentUser.ID));
+            break;
+        case "OFFER":
+            await createNewPeer(data.target);
+            const answer = await createAnswer(data.target,data.offer);
+            ws.send(JSON.stringify({
+                opCode: "RTC",
+                data: {
+                    type: "ANSWER",
+                    answer,
+                    target: data.target
+                }
+            }));
+            break;
+        case "ANSWER":
+            await receiveAnswer(data.target, data.answer);
+            break;
+        case "CANDIDATE":
+            await receiveCandidate(data);
+            break;
+        case "JOIN":
+            showToast(`${data.user.username} joined channel ${channelId}`,false,2);
+            break;
+        case "LEAVE":
+            if(!connections[data.user.ID]) return;
+            showToast(`${data.user.username} left channel ${channelId}`,false,2);
+            const peerConnection = connections[data.user.ID];
+            peerConnection.close();
+            delete connections[data.user.ID];
+            break;
+        case "ERR":
+            console.error(data);
+            leave();
+    }
+}
+
+let localStream;
+
+async function loadRTC() {
+    const localAudio = document.getElementById("localAudio");
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localAudio.srcObject = localStream;
+    rtcLoad = true;
+}
+
+async function unloadRTC(){
+    const localAudio = document.getElementById("localAudio");
+    if(localStream){
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
+    localAudio.srcObject = null;
+    rtcLoad = false;
+}
+
+async function createNewPeer(id){
+    if(connections[id]) return;
+    const peerConnection = new RTCPeerConnection();
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+    peerConnection.onicecandidate = ({candidate}) => {
+        if (candidate) {
+            ws.send(JSON.stringify({
+                opCode: "RTC",
+                data: {
+                    type: "CANDIDATE",
+                    candidate
+                }
+            }));
+        }
+    }
+
+    peerConnection.ontrack = ({ streams: [stream] }) => {
+        let remoteAudio = document.getElementById(`remoteAudio-${id}`);
+        if (!remoteAudio) {
+            remoteAudio = document.createElement("audio");
+            remoteAudio.id = `remoteAudio-${id}`;
+            remoteAudio.autoplay = true;
+            document.getElementById("remoteAudios").appendChild(remoteAudio);
+        }
+        remoteAudio.srcObject = stream;
+    }
+
+    connections[id] = peerConnection;
+}
+
+function createOffer(){
+    Object.keys(connections).every(async peer =>{
+        const peerConnection = connections[peer];
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+        ws.send(JSON.stringify({
+            opCode: "RTC",
+            data: {
+                type: "OFFER",
+                offer,
+                target: peer
+            }
+        }));
+    });
+}
+
+function createAnswer(id, offer){
+    return new Promise(async res =>{
+        let peerConnection = connections[id];
+        await peerConnection.setRemoteDescription(
+            new RTCSessionDescription(offer)
+        );
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
+        if (id in iceCache) {
+            for (const candidate of iceCache[id]) {
+                await peerConnection.addIceCandidate(candidate);
+            }
+            delete iceCache[id];
+        }
+        res(answer);
+    });
+}
+
+async function receiveAnswer(id, answer){
+    let peerConnection = connections[id];
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    if (id in iceCache) {
+        for (const candidate of iceCache[id]) {
+            await peerConnection.addIceCandidate(candidate);
+        }
+        delete iceCache[id];
+    }
+}
+
+function receiveCandidate(data) {
+    return new Promise(async res => {
+        const peerConnection = connections[data.target];
+        if (peerConnection && peerConnection.remoteDescription) {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } else {
+            if (!(data.target in iceCache)) iceCache[data.target] = [];
+            iceCache[data.target].push(data.candidate);
+        }
+        res(true);
+    });
 }
