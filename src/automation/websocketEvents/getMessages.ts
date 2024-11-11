@@ -18,7 +18,8 @@ export default class GetMessages extends WebsocketEvent {
         channel.messages.slice(-50).forEach(messageID => {
             messagePromises.push(readDatabase("messages", messageID) as Promise<Message>);
         });
-        const messages: Message[] = await Promise.all(messagePromises);
+        let messages: Message[] = await Promise.all(messagePromises)
+        messages = messages.filter(x => x !== null);
         ws.send(JSON.stringify({
             opCode: "GET_MSG",
             data: {
