@@ -631,7 +631,10 @@ async function handleRTC(data){
             break;
         case "ERR":
             console.error(data);
-            leave();
+            if(channelId){
+                await leave();
+            }
+            await unloadRTC();
     }
 }
 
