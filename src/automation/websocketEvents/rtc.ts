@@ -11,16 +11,16 @@ export default class RTC extends WebsocketEvent {
 
 
     async exec(event, ws, args) {
-        if(!event.bypass || event.bypass !== process.env.BYPASS_SECRET){
-            ws.send(JSON.stringify({
-                opCode: "RTC",
-                data: {
-                    type: "ERR",
-                    reason: "RTC server disabled for now..."
-                }
-            }));
-            return;
-        }
+        // if(!event.bypass || event.bypass !== process.env.BYPASS_SECRET){
+        //     ws.send(JSON.stringify({
+        //         opCode: "RTC",
+        //         data: {
+        //             type: "ERR",
+        //             reason: "RTC server disabled for now..."
+        //         }
+        //     }));
+        //     return;
+        // }
         let data = event.data;
         switch (data.type) {
             case "JOIN":

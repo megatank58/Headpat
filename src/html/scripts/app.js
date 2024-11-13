@@ -800,41 +800,50 @@ let muted = false;
 const micButton = document.getElementById("micButton");
 const mute = document.getElementById("micMute");
 const unmute = document.getElementById("micUnmute");
-if(muted){
-    unmute.style.display = "none";
-    mute.style.display = "flex";
-} else {
-    mute.style.display = "none";
-    unmute.style.display = "flex";
-}
 
+setMuteIcon();
 
-micButton.onmouseover = (e)=>{
-    e.preventDefault();
-    if(!muted){
-        unmute.style.display = "none";
-        mute.style.display = "flex";
-    } else {
-        mute.style.display = "none";
-        unmute.style.display = "flex";
-    }
-}
-micButton.onmouseout = (e)=>{
-    e.preventDefault();
-    if(muted){
-        unmute.style.display = "none";
-        mute.style.display = "flex";
-    } else {
-        mute.style.display = "none";
-        unmute.style.display = "flex";
-    }
-}
+// with these on it made it harder to tell if you were actually muted or not
+// micButton.onmouseover = (e)=>{
+//     e.preventDefault();
+//     if(!muted){
+//         unmute.style.display = "none";
+//         mute.style.display = "flex";
+//     } else {
+//         mute.style.display = "none";
+//         unmute.style.display = "flex";
+//     }
+// }
+// micButton.onmouseout = (e)=>{
+//     e.preventDefault();
+//     if(muted){
+//         unmute.style.display = "none";
+//         mute.style.display = "flex";
+//     } else {
+//         mute.style.display = "none";
+//         unmute.style.display = "flex";
+//     }
+// }
 
 micButton.onclick = (e) => {
     e.preventDefault();
     muted = !muted;
     localStream.getAudioTracks()[0].enabled = !muted;
+    setMuteIcon();
 };
+
+function setMuteIcon() {
+    if(muted){
+        // sets mute icon to red if muted
+        micButton.classList.add('muted');
+        unmute.style.display = "none";
+        mute.style.display = "flex";
+    } else {
+        micButton.classList.remove('muted');
+        mute.style.display = "none";
+        unmute.style.display = "flex";
+    }
+}
 
 const leaveButton = document.getElementById("leaveButton");
 const leaveIcon = document.getElementById("leaveIcon");
