@@ -5,16 +5,21 @@
     --bg-3: #000000;
     --bg-4: #000000;
     --bg-5: #0c0c0d;
-    --font-color-1: rgb(255, 255, 255);
-    --font-color-2: rgb(241, 242, 244);
-    --font-color-3: rgb(181, 186, 193);
-    --font-color-4: rgb(148, 155, 164);
-    --font-color-5: rgb(128, 132, 142);
+    --font-color-1: #ffffff;
+    --font-color-2: #f1f2f4;
+    --font-color-3: #b5bac1;
+    --font-color-4: #949ba4;
+    --font-color-5: #80848e;
 
-    --user-online: hsl(145, 65%, 39%);
-    --user-offline: rgb(128, 132, 142);
+    --interactive-normal: #b5bac1;
+    --interactive-hover: #dbdee1;
 
-    --blurple: rgb(82, 90, 220);
+    --user-online: #23a459;
+    --user-offline: #80848e;
+    --user-idle: #faa61a;
+    --user-dnd: #f04747;
+
+    --blurple: #525adc;
 }
 
 .channel.active {
