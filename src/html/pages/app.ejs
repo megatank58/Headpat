@@ -86,8 +86,8 @@
             <div id="messages">
                 <div id="messagesContainer" loaded="false">
                 </div>
+                <div id="targetAutoComplete" style="display: none; flex-direction: column; background-color: rgba(0, 0, 0, 0.2); border-radius: 20px; padding: 0 15px 15px; margin: 0 16px 15px;"></div>
                 <div class="flex-items" id="messageSender">
-                    <!-- messageFiledPlaceholder should be placed somewhere after messageField -->
                     <div id="messageField" class="text-input" role="textbox" aria-multiline="true" spellcheck="true" aria-haspopup="listbox" aria-invalid="false" aria-autocomplete="list" contenteditable="true" ondragenter="event.preventDefault(); event.dataTransfer.dropEffect = 'none'" ondragover="event.preventDefault(); event.dataTransfer.dropEffect = 'none'"></div>
                     <!-- mobileSend only shows and only works on mobile -->
                     <%- include("./emoji_picker"); %>
