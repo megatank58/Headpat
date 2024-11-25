@@ -12,6 +12,7 @@ document.headpat = {};
 document.headpat["messageStore"] = {};
 
 let userStore = {};
+let iceCreds;
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -72,6 +73,7 @@ function onMessage(event){
             currentChannel = eventData.data.state.currentChannel;
             document.headpat["currentChannel"] = eventData.data.state.currentChannel;
             if(version === "") {version = eventData.data.version;}
+            iceCreds = eventData.data.iceCreds;
             setUserProfile(eventData.data.user);
             ws.send(JSON.stringify({opCode: "GET_SER"}));
             //Intentional fallthrough.
@@ -770,21 +772,12 @@ async function createNewPeer(id){
     const peerConnection = new RTCPeerConnection({
         iceServers:[
             {
-                urls: ["turn:turn.anyfirewall.com:443?transport=tcp"],
-                credential: "webrtc",
-                username: "webrtc"
-            },
-            {
-                urls: [
-                    "stun:stun.l.google.com:19302",
-                    "stun:stun1.l.google.com:19302",
-                    "stun:stun2.l.google.com:19302",
-                    "stun:stun3.l.google.com:19302",
-                    "stun:stun4.l.google.com:19302",
-                ]
-            },
+                urls: iceCreds.urls,
+                credential: iceCreds.username,
+                username: iceCreds.password
+            }
         ],
-        /*iceTransportPolicy: "relay"*/
+        iceTransportPolicy: "relay"
     });
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
