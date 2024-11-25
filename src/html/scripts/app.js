@@ -12,6 +12,7 @@ document.headpat = {};
 document.headpat["messageStore"] = {};
 
 let userStore = {};
+let iceCreds;
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -72,6 +73,7 @@ function onMessage(event){
             currentChannel = eventData.data.state.currentChannel;
             document.headpat["currentChannel"] = eventData.data.state.currentChannel;
             if(version === "") {version = eventData.data.version;}
+            iceCreds = eventData.data.iceCreds;
             setUserProfile(eventData.data.user);
             ws.send(JSON.stringify({opCode: "GET_SER"}));
             //Intentional fallthrough.
@@ -377,22 +379,110 @@ function insertTextAtSelection(div, txt) {
     sel.addRange(range);
 }
 
-let keyMap = {}; //A map for what keys are currently pressed for messageField
-messageField.onkeydown = messageField.onkeyup = function(e){
-    if (messageContainer.scrollTop + messageContainer.clientHeight + 100 > messageContainer.scrollHeight) moveChat(currentUser.ID);
-    keyMap[e.key] = e.type == 'keydown';
-    messageField.scrollTop = messageField.scrollHeight;
-    if(keyMap["Enter"] && !keyMap["Shift"] && !isMobile) {
-        e.preventDefault();
-        sendMessage(messageField.innerText.replace(/^\s+|\s+$/g, ""));
+function getChatCursorPosition(element) {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(element);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+        return preCaretRange.toString().length;
     }
-    if (!isMobile) return;
-    if (messageField.innerText === '\n' || messageField.innerText.length < 0) {
-        messageFieldPlaceholder.style.display = "block";
+    return 0;
+}
+
+const targetAC = document.getElementById("targetAutoComplete");
+let targetAutoCompleteVisible = false;
+let targetUserSearch = "";
+const keyMap = {};
+
+function hideAC() {
+    targetAC.style.display = "none";
+    targetAC.innerHTML = "";
+    targetAutoCompleteVisible = false;
+}
+
+function handleCaretMove() {
+    const cursorPos = window.getSelection().getRangeAt(0).startOffset;
+    const textBeforeCursor = messageField.innerText.slice(0, cursorPos);
+
+    // Only match if `@` is at the beginning or preceded by a space
+    const match = textBeforeCursor.match(/(?:^|\s)@(\w*)$/);
+
+    if (match) {
+        targetUserSearch = match[1].toLowerCase();
+        const filteredUsers = Object.keys(userStore).filter(userID =>
+            userStore[userID].username.toLowerCase().startsWith(targetUserSearch)
+        );
+
+        targetAC.innerHTML = `<div><p>MEMBERS</p></div>
+            ${filteredUsers.map(userID => `
+                <div data-userid="${userID}" css-active="user_${userID}" class="user" id="user_${userID}">
+                    <img style="width: 32px; height: 32px; border-radius: 50%;" 
+                         src="/resource/user/${userID}/avatar?size=64&nonce=${Date.now()}" 
+                         onerror="this.src='/resource/user/${userID}/avatar?size=64&nonce=0'" 
+                         class="avatar" loading="lazy">
+                    <span>${userStore[userID].username}</span>
+                </div>`).join('')}`;
+
+        targetAC.style.display = "flex";
+        targetAutoCompleteVisible = true;
     } else {
-        messageFieldPlaceholder.style.display = "none";
+        hideAC();
     }
 }
+
+messageField.addEventListener("mouseup", handleCaretMove);
+document.addEventListener("selectionchange", handleCaretMove);
+
+
+messageField.onkeydown = messageField.onkeyup = function(e) {
+    if (messageContainer.scrollTop + messageContainer.clientHeight + 100 > messageContainer.scrollHeight) {
+        moveChat(currentUser.ID);
+    }
+
+    keyMap[e.key] = e.type === 'keydown';
+    messageField.scrollTop = messageField.scrollHeight;
+
+    handleCaretMove()
+
+    if (keyMap["Enter"] && !keyMap["Shift"] && !isMobile) {
+        e.preventDefault();
+        if (targetAutoCompleteVisible) {
+            hideAC();
+        }
+        sendMessage(messageField.innerText.trim());
+    }
+
+    if (!isMobile) return;
+    messageFieldPlaceholder.style.display = messageField.innerText.trim() === "" ? "block" : "none";
+};
+
+targetAC.addEventListener("click", (e) => {
+    const selectedUserDiv = e.target.closest("[data-userid]");
+    if (selectedUserDiv) {
+        const userID = selectedUserDiv.getAttribute("data-userid");
+        const username = userStore[userID].username;
+
+        const cursorPos = window.getSelection().getRangeAt(0).startOffset;
+        const textBeforeCursor = messageField.innerText.slice(0, cursorPos);
+        //TODO: SeaBass do cool mention magic perhaps here?
+        const newText = textBeforeCursor.replace(/@(\w*)$/, `<@${userID}>`);
+
+        messageField.innerText = `${newText} ${messageField.innerText.slice(cursorPos)}`;
+        hideAC();
+
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.setStart(messageField.childNodes[0], newText.length);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        messageField.focus();
+    }
+});
+
 
 if (isMobile) {
     const leftContainer = document.getElementById("leftContainer");
@@ -682,21 +772,12 @@ async function createNewPeer(id){
     const peerConnection = new RTCPeerConnection({
         iceServers:[
             {
-                urls: ["turn:turn.anyfirewall.com:443?transport=tcp"],
-                credential: "webrtc",
-                username: "webrtc"
-            },
-            {
-                urls: [
-                    "stun:stun.l.google.com:19302",
-                    "stun:stun1.l.google.com:19302",
-                    "stun:stun2.l.google.com:19302",
-                    "stun:stun3.l.google.com:19302",
-                    "stun:stun4.l.google.com:19302",
-                ]
-            },
+                urls: iceCreds.urls,
+                credential: iceCreds.username,
+                username: iceCreds.password
+            }
         ],
-        /*iceTransportPolicy: "relay"*/
+        iceTransportPolicy: "relay"
     });
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
@@ -800,41 +881,50 @@ let muted = false;
 const micButton = document.getElementById("micButton");
 const mute = document.getElementById("micMute");
 const unmute = document.getElementById("micUnmute");
-if(muted){
-    unmute.style.display = "none";
-    mute.style.display = "flex";
-} else {
-    mute.style.display = "none";
-    unmute.style.display = "flex";
-}
 
+setMuteIcon();
 
-micButton.onmouseover = (e)=>{
-    e.preventDefault();
-    if(!muted){
-        unmute.style.display = "none";
-        mute.style.display = "flex";
-    } else {
-        mute.style.display = "none";
-        unmute.style.display = "flex";
-    }
-}
-micButton.onmouseout = (e)=>{
-    e.preventDefault();
-    if(muted){
-        unmute.style.display = "none";
-        mute.style.display = "flex";
-    } else {
-        mute.style.display = "none";
-        unmute.style.display = "flex";
-    }
-}
+// with these on it made it harder to tell if you were actually muted or not
+// micButton.onmouseover = (e)=>{
+//     e.preventDefault();
+//     if(!muted){
+//         unmute.style.display = "none";
+//         mute.style.display = "flex";
+//     } else {
+//         mute.style.display = "none";
+//         unmute.style.display = "flex";
+//     }
+// }
+// micButton.onmouseout = (e)=>{
+//     e.preventDefault();
+//     if(muted){
+//         unmute.style.display = "none";
+//         mute.style.display = "flex";
+//     } else {
+//         mute.style.display = "none";
+//         unmute.style.display = "flex";
+//     }
+// }
 
 micButton.onclick = (e) => {
     e.preventDefault();
     muted = !muted;
     localStream.getAudioTracks()[0].enabled = !muted;
+    setMuteIcon();
 };
+
+function setMuteIcon() {
+    if(muted){
+        // sets mute icon to red if muted
+        micButton.classList.add('muted');
+        unmute.style.display = "none";
+        mute.style.display = "flex";
+    } else {
+        micButton.classList.remove('muted');
+        mute.style.display = "none";
+        unmute.style.display = "flex";
+    }
+}
 
 const leaveButton = document.getElementById("leaveButton");
 const leaveIcon = document.getElementById("leaveIcon");

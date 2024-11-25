@@ -458,18 +458,105 @@ div:has(> #serverNameContainer) {
     margin-right: 6px;
 }
 
-#user {
-    width: 100%;
+#userArea {
     background-color: var(--bg-2);
-    display: flex;
-    cursor: pointer;
-    padding: 5px;
+}
+
+#voiceChannelInfo {
+    display: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px;
+    flex-shrink: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    border-bottom: 1px solid var(--bg-5);
+}
+
+#vcInfoContent {
     align-items: center;
+    display: flex;
+    flex-basis: auto;
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding: 0 0 4px;
+    margin: 0;
+}
+
+#vcInfoText {
+    flex: 1;
+    min-width: 0;
+    font-weight: inherit;
+    font-style: inherit;
+    font-family: inherit;
+    font-size: 100%;
+    vertical-align: baseline;
+}
+
+#voiceChannelState {
+    display: flex;
+    align-items: center;
+    padding: 0 0 2px;
+}
+
+#voiceChannelName {
+    display: block;
+    font-size: 12px;
+}
+
+#vcInfoButtons {
+    align-items: stretch;
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    margin-left: 10px;
+}
+
+.voiceButton {
+    align-items: center;
+    display: flex;
+    border: 0;
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    padding: 3px;
     position: relative;
+    text-align: center;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+    cursor: pointer;
+    transition: background 200ms ease-in-out;
+    background: transparent;
+    color: var(--interactive-normal);
+}
+
+.voiceButton:hover {
+    /* background-image: linear-gradient(144deg, #AF40FF, #5B42F3 50%, #00DDEB); */
+    background-color: var(--bg-5);
+    color: var(--interactive-hover);
+}
+
+.voiceButton.muted {
+    color: var(--user-dnd);
+}
+
+#user {
+    height: 52px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    padding: 0 8px 1px;
+    flex-shrink: 0;
+    position: relative;
+    cursor: pointer;
 }
 
 #user>img {
-    float: left;
     border-radius: 50%;
     width: 42px;
     aspect-ratio: 1;
@@ -698,6 +785,9 @@ div:has(> #serverNameContainer) {
     color: var(--font-color-1);
     background: none;
     padding: 0;
+    cursor: pointer;
+    /* to center icon vertically */
+    display: flex;
 }
 
 #channelContentContainer {
@@ -1041,15 +1131,41 @@ div:has(> #serverNameContainer) {
 }
 
 #messageSenderButtons > div {
+    cursor: pointer;
     align-self: center;
-    min-width: 32px;
-    max-width: 32px;
-    min-height: 32px;
-    max-height: 32px;
+    width: 32px;
+    height: 32px;
     padding: 4px;
     margin: 0 4px;
-    background-color: black;
-    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+}
+
+.emojiPickerToggleSprite {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    width: 640px;
+    height: 128px;
+    background-origin: border-box;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: -320px -64px;
+}
+
+#emojiPickerToggleColor {
+    background-image: url('/resource/emojiToggleColor.png');
+    opacity: 0;
+    transition: opacity 100ms ease-in-out;
+}
+
+#emojiPickerToggle:hover #emojiPickerToggleColor {
+    opacity: 1;
+}
+
+#emojiPickerToggleGreyscale {
+    background-image: url('/resource/emojiToggleMask.png');
+    filter: brightness(2);
 }
 
 #mobileSend {
@@ -1191,23 +1307,4 @@ div:has(> #serverNameContainer) {
     #userPopup {
         width: auto;
     }
-}
-
-.voiceButton {
-    background-image: linear-gradient(144deg, #AF40FF, #5B42F3 50%, #00DDEB);
-    border: 0;
-    border-radius: 8px;
-    padding: 3px;
-    -webkit-user-select: none;
-    touch-action: manipulation;
-    white-space: nowrap;
-    cursor: pointer;
-    float: left;
-    margin: 0 5px 0 5px;
-    align-self: center;
-}
-
-#voiceChannelInfo {
-    padding: 10px 5px 10px 5px;
-    background-color: rgba(10, 10, 10, 0.12);
 }

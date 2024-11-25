@@ -6,10 +6,11 @@ import {getUser} from "./usermanager";
 import {loadWebsocketEvents} from "./websocketEventLoader";
 import {hasConnection, setConnection, initConnectionManager} from "./connectionmanager";
 import User from "../structs/User";
+import {createHmac} from "crypto";
 
 let server;
 //Remember to increment this when publishing an update to enforce a reload of clients.
-const version = `1.6.5_145`;
+const version = `1.7.0_159`;
 
 const init = async (srv)=>{
     const events = await loadWebsocketEvents();
@@ -51,6 +52,7 @@ const init = async (srv)=>{
             ws.tses = payload.session;
             ws.currentServer = "0";
             ws.currentChannel = "0";
+            let iceCreds = getIceCreds(ws.tid);
             setConnection(payload.id as string,{
                 id: payload.id,
                 session: payload.session,
@@ -65,7 +67,8 @@ const init = async (srv)=>{
                     state: {
                         currentServer: ws.currentServer,
                         currentChannel: ws.currentChannel
-                    }
+                    },
+                    iceCreds
                 }
             }));
             const queue: Promise<boolean>[] = [];
@@ -89,6 +92,20 @@ const init = async (srv)=>{
             ws.close();
         });
     });
+
+    function getIceCreds(id){
+        let username = `${Math.floor(Date.now()/1000) + (3*24*3600)}:${id}`;
+        let hmac = createHmac("sha1",process.env.ICE_SECRET as string);
+        hmac.setEncoding("base64");
+        hmac.write(username);
+        hmac.end();
+        let password = hmac.read();
+        return {
+            urls: [process.env.ICE_URL as string],
+            username,
+            password
+        };
+    }
 }
 
 export {
