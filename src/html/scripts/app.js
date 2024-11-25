@@ -773,8 +773,8 @@ async function createNewPeer(id){
         iceServers:[
             {
                 urls: iceCreds.urls,
-                credential: iceCreds.username,
-                username: iceCreds.password
+                credential: iceCreds.password,
+                username: iceCreds.username
             }
         ],
         iceTransportPolicy: "relay"
