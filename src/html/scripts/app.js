@@ -669,8 +669,8 @@ function createVoiceList(users){
     let voiceChat = document.getElementById(channelId);
     const vcUserCont = document.createElement("div");
     vcUserCont.id = "voiceChannelUserContainer";
-    users.forEach(userID => {
-        let user = userStore[userID];
+    users = users.map(x => userStore[x]).sort((a,b)=>{a.username.localeCompare(b.username)});
+    users.forEach(user => {
         vcUserCont.innerHTML += `
 <div data-userid="${user.ID}" css-active="user_${user.ID}" class="user ONLINE exitable" id="vcuser_${user.ID}" onclick="openUserPopup('${user.ID}',this)" oncontextmenu="openUserContext(event, this)">
     <img onerror="this.src='/resource/user/${user.ID}/avatar?size=32&nonce=0'" data-userid="${user.ID}" class="avatar" loading="lazy" src="/resource/user/${user.ID}/avatar?size=32&nonce=${Date.now()}">
@@ -685,12 +685,12 @@ function createVoiceList(users){
 function updateVoiceList(user, operation, value){
     let voiceChat = document.getElementById("voiceChannelUserContainer");
     if(!voiceChat) return;
+    const target = document.getElementById(`vcuser_${user.ID}`);
     switch(operation){
         case "MUTE":
             let checkMute = document.getElementById(`${user.ID}_muted`);
             if(value){
                 if(checkMute) return;
-                const target = document.getElementById(`vcuser_${user.ID}`);
                 target.innerHTML += `<div id="${user.ID}_muted" class="voiceButton muted" style="">
                     <svg id="${user.ID}_muteicon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="24px" height="24px" viewBox="0 0 24 24" style="display: flex;"><path fill-rule="evenodd" d="M14.0319673,15.4461809 C13.4364541,15.7980706 12.7418086,16 12,16 C9.790861,16 8,14.209139 8,12 L8,9.41421356 L1.29289322,2.70710678 L2.70710678,1.29289322 L22.7071068,21.2928932 L21.2928932,22.7071068 L16.9056439,18.3198574 C15.7991209,19.1800111 14.4607085,19.7559585 13,19.9381062 L13,21 L16,21 L16,23 L8,23 L8,21 L11,21 L11,19.9381062 C7.05368842,19.4460082 4,16.0796177 4,12 L4,10 L6,10 L6,12 C6,15.3137085 8.6862915,18 12,18 C13.2958304,18 14.4957155,17.589209 15.4765344,16.8907479 L14.0319673,15.4461809 Z M10,11.4142136 L10,12 C10,13.1045695 10.8954305,14 12,14 C12.1791593,14 12.3528166,13.9764427 12.5180432,13.9322568 L10,11.4142136 Z M16,11.7857865 L14,9.78578649 L14,5 C14,3.8954305 13.1045695,3 12,3 C10.8954305,3 10,3.8954305 10,5 L10,5.78578649 L8.14460779,3.93039427 C8.61238846,2.24059489 10.161316,1 12,1 C14.209139,1 16,2.790861 16,5 L16,11.7857865 Z M17.7907353,13.5765218 C17.9271822,13.0741479 18,12.5455777 18,12 L18,10 L20,10 L20,12 C20,13.116226 19.7713927,14.1790579 19.3584437,15.1442302 L17.7907353,13.5765218 Z"></path></svg>
                 </div>`;
@@ -706,7 +706,14 @@ function updateVoiceList(user, operation, value){
 </div>`;
             break;
         case "DEL":
-            document.getElementById(`vcuser_${user.ID}`).remove();
+            target.remove();
+            break;
+        case "SPEAK":
+            if(value){
+                target.className += " speaking";
+            } else {
+                target.className = target.className.split(" speaking")[0];
+            }
             break;
     }
 }
@@ -768,6 +775,9 @@ async function handleRTC(data){
         case "MUTE":
             updateVoiceList(userStore[data.target],"MUTE",data.value);
             break;
+        case "SPEAK":
+            updateVoiceList(userStore[data.target],"SPEAK",data.value);
+            break;
         case "ERR":
             console.error(data);
             if(channelId){
@@ -786,6 +796,43 @@ async function loadRTC() {
     localAudio.srcObject = localStream;
     rtcLoad = true;
     voiceChannelInfo.style.display = "flex";
+
+    const audioCtx = new AudioContext();
+    const aCtxAnalyze = audioCtx.createAnalyser();
+    const mic = audioCtx.createMediaStreamSource(localStream);
+    const dataArr = new Uint8Array(aCtxAnalyze.frequencyBinCount);
+    aCtxAnalyze.fftSize = 256;
+    mic.connect(aCtxAnalyze);
+    let sentStop = true;
+
+    const checkIfSpeaking = () => {
+        aCtxAnalyze.getByteFrequencyData(dataArr);
+        let vol = dataArr.reduce((a,b)=> a+b) / dataArr.length;
+        if(vol > 10){
+            sentStop = false;
+            send({
+                opCode: "RTC",
+                data: {
+                    type: "SPEAKER",
+                    value: true
+                }
+            });
+        } else {
+            if(sentStop) return;
+            sentStop = true;
+            send({
+                opCode: "RTC",
+                data: {
+                    type: "SPEAKER",
+                    value: false
+                }
+            });
+        }
+
+        requestAnimationFrame(checkIfSpeaking);
+    };
+
+    checkIfSpeaking();
 }
 
 async function unloadRTC(){
