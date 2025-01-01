@@ -9,7 +9,7 @@ import {createHmac} from "crypto";
 
 let server;
 //Remember to increment this when publishing an update to enforce a reload of clients.
-const version = `1.8.2_252`;
+const version = `1.8.3_219`;
 
 const init = async (srv)=>{
     const events = await loadWebsocketEvents();

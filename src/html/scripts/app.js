@@ -664,6 +664,36 @@ async function join(id){
     });
 }
 
+function createVoiceList(users){
+    let voiceChat = document.getElementById(channelId);
+    const vcUserCont = document.createElement("div");
+    vcUserCont.id = "voiceChannelUserContainer";
+    users.forEach(userID => {
+        let user = userStore[userID];
+        vcUserCont.innerHTML += `
+<div data-userid="${user.ID}" css-active="user_${user.ID}" class="user ONLINE exitable" id="vcuser_${user.ID}" onclick="openUserPopup('${user.ID}',this)" oncontextmenu="openUserContext(event, this)">
+    <img onerror="this.src='/resource/user/${user.ID}/avatar?size=32&nonce=0'" data-userid="${user.ID}" class="avatar" loading="lazy" src="/resource/user/${user.ID}/avatar?size=32&nonce=${Date.now()}">
+    <span>${user.username}</span>
+</div>`;
+    });
+    if(voiceChat && voiceChat.parentNode){
+        voiceChat.parentNode.insertBefore(vcUserCont,voiceChat.nextSibling);
+    }
+}
+
+function updateVoiceList(user, addition){
+    let voiceChat = document.getElementById("voiceChannelUserContainer");
+    if(!voiceChat) return;
+    if(addition){
+        voiceChat.innerHTML += `
+<div data-userid="${user.ID}" css-active="user_${user.ID}" class="user ONLINE exitable" id="vcuser_${user.ID}" onclick="openUserPopup('${user.ID}',this)" oncontextmenu="openUserContext(event, this)">
+    <img onerror="this.src='/resource/user/${user.ID}/avatar?size=32&nonce=0'" data-userid="${user.ID}" class="avatar" loading="lazy" src="/resource/user/${user.ID}/avatar?size=32&nonce=${Date.now()}">
+    <span>${user.username}</span>
+</div>`;
+    } else {
+        document.getElementById(`vcuser_${user.ID}`).delete();
+    }
+}
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
 let iceCache = {};
@@ -675,6 +705,7 @@ async function handleRTC(data){
             channelId = connectId;
             showToast(`Joined channel ${channelId}`,false,2);
             voiceChannelState.innerText = "RTC waiting: ";
+            createVoiceList([currentUser.ID]);
             break;
         case "SEND_OFFER":
             channelId = connectId;
@@ -684,6 +715,7 @@ async function handleRTC(data){
                 que.push(createNewPeer(member));
             });
             Promise.all(que).then(()=>createOffer(currentUser.ID));
+            createVoiceList([currentUser.ID, ...data.members]);
             break;
         case "OFFER":
             await createNewPeer(data.target);
@@ -705,10 +737,12 @@ async function handleRTC(data){
             break;
         case "JOIN":
             showToast(`${data.user.username} joined channel ${channelId}`,false,2);
+            updateVoiceList(data.user,true);
             break;
         case "LEAVE":
             if(!connections[data.user.ID]) return;
             showToast(`${data.user.username} left channel ${channelId}`,false,2);
+            updateVoiceList(data.user,false);
             const peerConnection = connections[data.user.ID];
             peerConnection.close();
             delete connections[data.user.ID];
