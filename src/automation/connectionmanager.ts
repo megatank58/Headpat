@@ -2,6 +2,7 @@ import {readDatabase} from "./database";
 import Auth from "../structs/Auth";
 import {WebSocket} from "ws";
 import User from "../structs/User";
+import {removeConnection} from "./voiceconnectionmanager";
 
 const connections = new Map();
 let server;
@@ -37,6 +38,7 @@ setInterval(()=>{
         const inspect = await readDatabase("auth",x.id) as Auth;
         if(x.session !== inspect.sessionSecret || Date.now() - x.heartbeat > 1000*15){
             connections.delete(x.id);
+            removeConnection(x.id,server);
             //console.log(`${x.id} lost connection.`);
             const user = await readDatabase("users",x.id) as User;
             const queue: Promise<boolean>[] = [];
