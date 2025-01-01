@@ -141,6 +141,18 @@ export default class RTC extends WebsocketEvent {
                         value: data.value
                     }
                 }));
+                break;
+
+            case "SPEAK":
+                if(!checkIfConnected(ws.tid)) return;
+                sendTo(getConnections(ws.webrtcChannel),JSON.stringify({
+                    opCode: "RTC",
+                    data: {
+                        type: "SPEAK",
+                        target: ws.tid,
+                        value: data.value
+                    }
+                }));
         }
 
         function sendTo(recipients,message){

@@ -1308,3 +1308,10 @@ div:has(> #serverNameContainer) {
         width: auto;
     }
 }
+
+.speaking {
+    border-radius: 50%;
+    border: 3px solid lime;
+    object-fit: cover;
+    box-shadow: 0 0 10px 5px rgba(0, 255, 0, 0.7);
+}
