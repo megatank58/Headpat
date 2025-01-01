@@ -2,6 +2,7 @@ import WebsocketEvent from "../../structs/WebsocketEvent";
 import {WebSocket} from "ws";
 import {readDatabase} from "../database";
 import {checkIfConnected, getConnections, newConnection, removeConnection} from "../voiceconnectionmanager";
+import User from "../../structs/User";
 
 export default class RTC extends WebsocketEvent {
 
@@ -27,12 +28,18 @@ export default class RTC extends WebsocketEvent {
                             members: joinclients.filter(x => x !== ws.tid)
                         }
                     }));
-                    const user = await readDatabase("users",ws.tid);
+                    const user: User = await readDatabase("users",ws.tid) as User;
                     sendTo(joinclients.filter(x => x !== ws.tid),JSON.stringify({
                         opCode: "RTC",
                         data: {
                             type: "JOIN",
-                            user
+                            user: {
+                                ID: user.ID,
+                                username: user.username,
+                                discriminator: user.discriminator,
+                                role: user.role,
+                                createdAt: user.createdAt
+                            }
                         }
                     }));
                 } else {
