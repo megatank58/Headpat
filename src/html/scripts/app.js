@@ -767,12 +767,14 @@ async function handleRTC(data){
             break;
         case "MUTE":
             updateVoiceList(userStore[data.target],"MUTE",data.value);
+            break;
         case "ERR":
             console.error(data);
             if(channelId){
                 await leave();
             }
             await unloadRTC();
+            break;
     }
 }
 
