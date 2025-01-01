@@ -25,7 +25,8 @@ export default class RTC extends WebsocketEvent {
                         opCode: "RTC",
                         data: {
                             type: "SEND_OFFER",
-                            members: joinclients.filter(x => x !== ws.tid)
+                            members: joinclients.filter(x => x !== ws.tid),
+                            muted: data.muted
                         }
                     }));
                     const user: User = await readDatabase("users",ws.tid) as User;
@@ -39,14 +40,16 @@ export default class RTC extends WebsocketEvent {
                                 discriminator: user.discriminator,
                                 role: user.role,
                                 createdAt: user.createdAt
-                            }
+                            },
+                            muted: data.muted
                         }
                     }));
                 } else {
                     ws.send(JSON.stringify({
                         opCode: "RTC",
                         data: {
-                            type: "ALONE"
+                            type: "ALONE",
+                            muted: data.muted
                         }
                     }));
                 }
@@ -126,6 +129,18 @@ export default class RTC extends WebsocketEvent {
                 }));
                 removeConnection(ws.tid,args.server);
                 ws.webrtcChannel = null;
+                break;
+
+            case "MUTE":
+                if(!checkIfConnected(ws.tid)) return;
+                sendTo(getConnections(ws.webrtcChannel),JSON.stringify({
+                    opCode: "RTC",
+                    data: {
+                        type: "MUTE",
+                        target: ws.tid,
+                        value: data.value
+                    }
+                }));
         }
 
         function sendTo(recipients,message){

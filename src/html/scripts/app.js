@@ -659,7 +659,8 @@ async function join(id){
         opCode: "RTC",
         data: {
             type: "JOIN",
-            channelID: id
+            channelID: id,
+            muted
         }
     });
 }
@@ -681,17 +682,32 @@ function createVoiceList(users){
     }
 }
 
-function updateVoiceList(user, addition){
+function updateVoiceList(user, operation, value){
     let voiceChat = document.getElementById("voiceChannelUserContainer");
     if(!voiceChat) return;
-    if(addition){
-        voiceChat.innerHTML += `
+    switch(operation){
+        case "MUTE":
+            let checkMute = document.getElementById(`${user.ID}_muted`);
+            if(value){
+                if(checkMute) return;
+                const target = document.getElementById(`vcuser_${user.ID}`);
+                target.innerHTML += `<div id="${user.ID}_muted" class="voiceButton muted" style="">
+                    <svg id="micMute" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="24px" height="24px" viewBox="0 0 24 24" style="display: flex;"><path fill-rule="evenodd" d="M14.0319673,15.4461809 C13.4364541,15.7980706 12.7418086,16 12,16 C9.790861,16 8,14.209139 8,12 L8,9.41421356 L1.29289322,2.70710678 L2.70710678,1.29289322 L22.7071068,21.2928932 L21.2928932,22.7071068 L16.9056439,18.3198574 C15.7991209,19.1800111 14.4607085,19.7559585 13,19.9381062 L13,21 L16,21 L16,23 L8,23 L8,21 L11,21 L11,19.9381062 C7.05368842,19.4460082 4,16.0796177 4,12 L4,10 L6,10 L6,12 C6,15.3137085 8.6862915,18 12,18 C13.2958304,18 14.4957155,17.589209 15.4765344,16.8907479 L14.0319673,15.4461809 Z M10,11.4142136 L10,12 C10,13.1045695 10.8954305,14 12,14 C12.1791593,14 12.3528166,13.9764427 12.5180432,13.9322568 L10,11.4142136 Z M16,11.7857865 L14,9.78578649 L14,5 C14,3.8954305 13.1045695,3 12,3 C10.8954305,3 10,3.8954305 10,5 L10,5.78578649 L8.14460779,3.93039427 C8.61238846,2.24059489 10.161316,1 12,1 C14.209139,1 16,2.790861 16,5 L16,11.7857865 Z M17.7907353,13.5765218 C17.9271822,13.0741479 18,12.5455777 18,12 L18,10 L20,10 L20,12 C20,13.116226 19.7713927,14.1790579 19.3584437,15.1442302 L17.7907353,13.5765218 Z"></path></svg>
+                </div>`;
+            } else {
+                if(checkMute) return checkMute.remove();
+            }
+            break;
+        case "ADD":
+            voiceChat.innerHTML += `
 <div data-userid="${user.ID}" css-active="user_${user.ID}" class="user ONLINE exitable" id="vcuser_${user.ID}" onclick="openUserPopup('${user.ID}',this)" oncontextmenu="openUserContext(event, this)">
     <img onerror="this.src='/resource/user/${user.ID}/avatar?size=32&nonce=0'" data-userid="${user.ID}" class="avatar" loading="lazy" src="/resource/user/${user.ID}/avatar?size=32&nonce=${Date.now()}">
     <span>${user.username}</span>
 </div>`;
-    } else {
-        document.getElementById(`vcuser_${user.ID}`).remove();
+            break;
+        case "DEL":
+            document.getElementById(`vcuser_${user.ID}`).remove();
+            break;
     }
 }
 
@@ -700,6 +716,7 @@ let iceCache = {};
 let debugRTC = false;
 async function handleRTC(data){
     if(debugRTC) console.log(data);
+    if(data.muted) muted = data.muted;
     switch(data.type){
         case "ALONE":
             channelId = connectId;
@@ -737,15 +754,19 @@ async function handleRTC(data){
             break;
         case "JOIN":
             showToast(`${data.user.username} joined channel ${channelId}`,false,2);
-            updateVoiceList(data.user,true);
+            updateVoiceList(data.user,"ADD");
+            updateVoiceList(data.user, "MUTE", data.muted);
             break;
         case "LEAVE":
             if(!connections[data.user.ID]) return;
             showToast(`${data.user.username} left channel ${channelId}`,false,2);
-            updateVoiceList(data.user,false);
+            updateVoiceList(data.user, "DEL");
             const peerConnection = connections[data.user.ID];
             peerConnection.close();
             delete connections[data.user.ID];
+            break;
+        case "MUTE":
+            updateVoiceList(userStore[data.target],"MUTE",data.value);
             break;
         case "ERR":
             console.error(data);
@@ -753,6 +774,7 @@ async function handleRTC(data){
                 await leave();
             }
             await unloadRTC();
+            break;
     }
 }
 
@@ -919,50 +941,26 @@ let muted = false;
 const micButton = document.getElementById("micButton");
 const mute = document.getElementById("micMute");
 const unmute = document.getElementById("micUnmute");
-
-setMuteIcon();
-
-// with these on it made it harder to tell if you were actually muted or not
-// micButton.onmouseover = (e)=>{
-//     e.preventDefault();
-//     if(!muted){
-//         unmute.style.display = "none";
-//         mute.style.display = "flex";
-//     } else {
-//         mute.style.display = "none";
-//         unmute.style.display = "flex";
-//     }
-// }
-// micButton.onmouseout = (e)=>{
-//     e.preventDefault();
-//     if(muted){
-//         unmute.style.display = "none";
-//         mute.style.display = "flex";
-//     } else {
-//         mute.style.display = "none";
-//         unmute.style.display = "flex";
-//     }
-// }
+if(muted){
+    unmute.style.display = "none";
+    mute.style.display = "flex";
+} else {
+    mute.style.display = "none";
+    unmute.style.display = "flex";
+}
 
 micButton.onclick = (e) => {
     e.preventDefault();
     muted = !muted;
     localStream.getAudioTracks()[0].enabled = !muted;
-    setMuteIcon();
+    send({
+        opCode: "RTC",
+        data: {
+            type: "MUTE",
+            value: muted
+        }
+    });
 };
-
-function setMuteIcon() {
-    if(muted){
-        // sets mute icon to red if muted
-        micButton.classList.add('muted');
-        unmute.style.display = "none";
-        mute.style.display = "flex";
-    } else {
-        micButton.classList.remove('muted');
-        mute.style.display = "none";
-        unmute.style.display = "flex";
-    }
-}
 
 const leaveButton = document.getElementById("leaveButton");
 const leaveIcon = document.getElementById("leaveIcon");
