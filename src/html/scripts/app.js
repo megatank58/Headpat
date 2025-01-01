@@ -691,7 +691,7 @@ function updateVoiceList(user, addition){
     <span>${user.username}</span>
 </div>`;
     } else {
-        document.getElementById(`vcuser_${user.ID}`).delete();
+        document.getElementById(`vcuser_${user.ID}`).remove();
     }
 }
 
@@ -796,6 +796,8 @@ async function leave(){
             type: "LEAVE"
         }
     });
+    let voiceChat = document.getElementById("voiceChannelUserContainer");
+    if(voiceChat) voiceChat.remove();
     unloadRTC();
     Object.keys(connections).every(key =>{
         connections[key].close();
