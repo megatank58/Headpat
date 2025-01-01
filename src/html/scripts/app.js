@@ -792,23 +792,29 @@ let localStream;
 
 async function loadRTC() {
     const localAudio = document.getElementById("localAudio");
+    let sentStop = true;
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     localAudio.srcObject = localStream;
+
     rtcLoad = true;
     voiceChannelInfo.style.display = "flex";
 
     const audioCtx = new AudioContext();
     const aCtxAnalyze = audioCtx.createAnalyser();
-    const mic = audioCtx.createMediaStreamSource(localStream);
-    const dataArr = new Uint8Array(aCtxAnalyze.frequencyBinCount);
     aCtxAnalyze.fftSize = 256;
+
+    const mic = audioCtx.createMediaStreamSource(localStream);
     mic.connect(aCtxAnalyze);
-    let sentStop = true;
+
+    const dataArr = new Uint8Array(aCtxAnalyze.frequencyBinCount);
 
     const checkIfSpeaking = () => {
         aCtxAnalyze.getByteFrequencyData(dataArr);
-        let vol = dataArr.reduce((a,b)=> a+b) / dataArr.length;
-        if(vol > 10){
+
+        let vol = dataArr.reduce((a, b) => a + b) / dataArr.length;
+
+        if (vol > 10) {
+            if(!sentStop) return;
             sentStop = false;
             send({
                 opCode: "RTC",
@@ -818,7 +824,7 @@ async function loadRTC() {
                 }
             });
         } else {
-            if(sentStop) return;
+            if (sentStop) return;
             sentStop = true;
             send({
                 opCode: "RTC",
