@@ -48,7 +48,13 @@ setInterval(()=>{
                         y.send(JSON.stringify({
                             opCode: "UPD_MEM",
                             data: {
-                                user,
+                                user: {
+                                    ID: user.ID,
+                                    username: user.username,
+                                    discriminator: user.discriminator,
+                                    role: user.role,
+                                    createdAt: user.createdAt
+                                },
                                 online: "OFFLINE"
                             }
                         }));
