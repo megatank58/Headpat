@@ -669,8 +669,8 @@ function createVoiceList(users){
     let voiceChat = document.getElementById(channelId);
     const vcUserCont = document.createElement("div");
     vcUserCont.id = "voiceChannelUserContainer";
-    users.forEach(userID => {
-        let user = userStore[userID];
+    users = users.map(x => userStore[x]).sort((a,b)=>{a.username.localeCompare(b.username)});
+    users.forEach(user => {
         vcUserCont.innerHTML += `
 <div data-userid="${user.ID}" css-active="user_${user.ID}" class="user ONLINE exitable" id="vcuser_${user.ID}" onclick="openUserPopup('${user.ID}',this)" oncontextmenu="openUserContext(event, this)">
     <img onerror="this.src='/resource/user/${user.ID}/avatar?size=32&nonce=0'" data-userid="${user.ID}" class="avatar" loading="lazy" src="/resource/user/${user.ID}/avatar?size=32&nonce=${Date.now()}">
