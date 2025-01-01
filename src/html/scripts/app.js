@@ -952,6 +952,13 @@ if(muted){
 micButton.onclick = (e) => {
     e.preventDefault();
     muted = !muted;
+    if(muted){
+        unmute.style.display = "none";
+        mute.style.display = "flex";
+    } else {
+        mute.style.display = "none";
+        unmute.style.display = "flex";
+    }
     localStream.getAudioTracks()[0].enabled = !muted;
     send({
         opCode: "RTC",
