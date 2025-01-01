@@ -756,12 +756,12 @@ async function leave(){
         connectId = undefined;
     }
     document.getElementById("voiceChannelInfo").style.display = "none";
-    send(JSON.stringify({
+    send({
         opCode: "RTC",
         data: {
             type: "LEAVE"
         }
-    }));
+    });
     unloadRTC();
     Object.keys(connections).every(key =>{
         connections[key].close();
