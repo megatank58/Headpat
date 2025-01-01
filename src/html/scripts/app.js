@@ -947,28 +947,6 @@ if(muted){
     unmute.style.display = "flex";
 }
 
-
-micButton.onmouseover = (e)=>{
-    e.preventDefault();
-    if(!muted){
-        unmute.style.display = "none";
-        mute.style.display = "flex";
-    } else {
-        mute.style.display = "none";
-        unmute.style.display = "flex";
-    }
-}
-micButton.onmouseout = (e)=>{
-    e.preventDefault();
-    if(muted){
-        unmute.style.display = "none";
-        mute.style.display = "flex";
-    } else {
-        mute.style.display = "none";
-        unmute.style.display = "flex";
-    }
-}
-
 micButton.onclick = (e) => {
     e.preventDefault();
     muted = !muted;

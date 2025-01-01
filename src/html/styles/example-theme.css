@@ -11,8 +11,13 @@
     --font-color-4: #c300ff;
     --font-color-5: #ff00ea;
 
-    --user-online: hsl(145, 65%, 39%);
-    --user-offline: rgb(128, 132, 142);
+    --interactive-normal: #b5bac1;
+    --interactive-hover: #dbdee1;
+
+    --user-online: #23a459;
+    --user-offline: #80848e;
+    --user-idle: #faa61a;
+    --user-dnd: #f04747;
 
     --blurple: rgb(82, 90, 220);
 }
