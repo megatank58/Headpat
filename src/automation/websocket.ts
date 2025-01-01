@@ -6,10 +6,11 @@ import {getUser} from "./usermanager";
 import {loadWebsocketEvents} from "./websocketEventLoader";
 import {hasConnection, setConnection, initConnectionManager} from "./connectionmanager";
 import {createHmac} from "crypto";
+import {removeConnection} from "./voiceconnectionmanager";
 
 let server;
 //Remember to increment this when publishing an update to enforce a reload of clients.
-const version = `1.8.3_223`;
+const version = `1.8.3_229`;
 
 const init = async (srv)=>{
     const events = await loadWebsocketEvents();
@@ -51,6 +52,7 @@ const init = async (srv)=>{
             ws.tses = payload.session;
             ws.currentServer = "0";
             ws.currentChannel = "0";
+            removeConnection(ws.tid,server);
             let iceCreds = getIceCreds(ws.tid);
             setConnection(payload.id as string,{
                 id: payload.id,
