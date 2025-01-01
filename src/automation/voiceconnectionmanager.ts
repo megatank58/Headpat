@@ -1,5 +1,6 @@
 import {WebSocket} from "ws";
 import {readDatabase} from "./database";
+import User from "../structs/User";
 
 const channels = new Map();
 const clients = new Map();
@@ -20,7 +21,7 @@ function removeConnection(id,server){
                     channels.delete(channel);
                 } else {
                     channels.set(channel,users);
-                    readDatabase("users",id).then(user => {
+                    readDatabase("users",id).then((user: User) => {
                         const queue: Promise<boolean>[] = [];
                         server.clients.forEach(x => {
                             queue.push(new Promise(async res => {
@@ -30,7 +31,13 @@ function removeConnection(id,server){
                                             opCode: "RTC",
                                             data: {
                                                 type: "LEAVE",
-                                                user
+                                                user: {
+                                                    ID: user.ID,
+                                                    username: user.username,
+                                                    discriminator: user.discriminator,
+                                                    role: user.role,
+                                                    createdAt: user.createdAt
+                                                }
                                             }
                                         }));
                                     }
