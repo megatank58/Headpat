@@ -1,9 +1,9 @@
 import WebsocketEvent from "../../structs/WebsocketEvent";
 import {WebSocket} from "ws";
 import {readDatabase} from "../database";
+import {checkIfConnected, getConnections, newConnection, removeConnection} from "../voiceconnectionmanager";
 
 export default class RTC extends WebsocketEvent {
-    channels = new Map();
 
     constructor() {
         super("RTC");
@@ -11,33 +11,14 @@ export default class RTC extends WebsocketEvent {
 
 
     async exec(event, ws, args) {
-        if(!event.bypass || event.bypass !== process.env.BYPASS_SECRET){
-            ws.send(JSON.stringify({
-                opCode: "RTC",
-                data: {
-                    type: "ERR",
-                    reason: "RTC server disabled for now..."
-                }
-            }));
-            return;
-        }
         let data = event.data;
         switch (data.type) {
             case "JOIN":
-                if(!this.channels.has(data.channelID)) this.channels.set(data.channelID,[]);
-                let joinclients = this.channels.get(data.channelID);
-                /*if(joinclients.includes(ws.tid)){
-                    return ws.send(JSON.stringify({
-                        opCode: "RTC",
-                        data: {
-                            type: "ERR",
-                            reason: `${ws.tid} already connected to WebRTC, please disconnect first.`
-                        }
-                    }));
-                }*/
+                if(checkIfConnected(ws.tid)){
+                    removeConnection(ws.tid,args.server);
+                }
                 ws.webrtcChannel = data.channelID;
-                joinclients.push(ws.tid);
-                this.channels.set(data.channelID, joinclients);
+                const joinclients = newConnection(ws.tid,data.channelID);
                 if(joinclients.length > 1){
                     ws.send(JSON.stringify({
                         opCode: "RTC",
@@ -65,8 +46,14 @@ export default class RTC extends WebsocketEvent {
                 break;
 
             case "OFFER":
-                if(!this.channels.has(ws.webrtcChannel)) this.channels.set(ws.webrtcChannel,[]);
-                let offerclients = this.channels.get(ws.webrtcChannel);
+                if(!checkIfConnected(ws.tid)) return ws.send(JSON.stringify({
+                    opCode: "RTC",
+                    data: {
+                        type: "ERR",
+                        reason: `${ws.tid} not connected to channel, JOIN first.`
+                    }
+                }));
+                let offerclients = getConnections(ws.webrtcChannel);
                 if(!offerclients.includes(ws.tid)) return ws.send(JSON.stringify({
                     opCode: "RTC",
                     data: {
@@ -85,7 +72,14 @@ export default class RTC extends WebsocketEvent {
                 break;
 
             case "ANSWER":
-                if(!this.channels.has(ws.webrtcChannel)) this.channels.set(ws.webrtcChannel,[]);
+                if(!checkIfConnected(ws.tid)) return ws.send(JSON.stringify({
+                    opCode: "RTC",
+                    data: {
+                        type: "ERR",
+                        reason: `${ws.tid} not connected to channel, JOIN first.`
+                    }
+                }));
+
                 sendTo([data.target],JSON.stringify({
                     opCode: "RTC",
                     data: {
@@ -97,8 +91,15 @@ export default class RTC extends WebsocketEvent {
                 break;
 
             case "CANDIDATE":
-                if(!this.channels.has(ws.webrtcChannel)) this.channels.set(ws.webrtcChannel,[]);
-                sendTo(this.channels.get(ws.webrtcChannel).filter(x => x !== ws.tid),JSON.stringify({
+                if(!checkIfConnected(ws.tid)) return ws.send(JSON.stringify({
+                    opCode: "RTC",
+                    data: {
+                        type: "ERR",
+                        reason: `${ws.tid} not connected to channel, JOIN first.`
+                    }
+                }));
+
+                sendTo(getConnections(ws.webrtcChannel).filter(x => x !== ws.tid),JSON.stringify({
                     opCode: "RTC",
                     data: {
                         type: "CANDIDATE",
@@ -109,24 +110,15 @@ export default class RTC extends WebsocketEvent {
                 break;
 
             case "LEAVE":
-                if(!this.channels.has(ws.webrtcChannel)) this.channels.set(ws.webrtcChannel,[]);
-                let leaveclients = this.channels.get(ws.webrtcChannel);
-                if(leaveclients.includes(ws.tid)){
-                    leaveclients.splice(leaveclients.indexOf(ws.tid),1);
-                    if(leaveclients.length < 1){
-                        this.channels.delete(ws.webrtcChannel);
-                    }
-                    this.channels.set(ws.webrtcChannel,leaveclients);
-                }
-                ws.webrtcChannel = null;
-                const user = await readDatabase("users",ws.tid);
-                sendTo(leaveclients,JSON.stringify({
+                if(!checkIfConnected(ws.tid)) return ws.send(JSON.stringify({
                     opCode: "RTC",
                     data: {
-                        type: "LEAVE",
-                        user
+                        type: "ERR",
+                        reason: `${ws.tid} not connected to channel, JOIN first.`
                     }
                 }));
+                removeConnection(ws.tid,args.server);
+                ws.webrtcChannel = null;
         }
 
         function sendTo(recipients,message){
@@ -144,5 +136,6 @@ export default class RTC extends WebsocketEvent {
             });
             Promise.all(queue);
         }
+
     }
 }
