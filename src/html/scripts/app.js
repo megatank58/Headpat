@@ -664,25 +664,6 @@ async function join(id){
     });
 }
 
-async function leave(){
-    showToast(`Left channel ${channelId}`,false,2);
-    if(channelId || connectId){
-        document.getElementById(channelId ?? connectId).style.color = "rgb(128, 132, 142)";
-        channelId = undefined;
-        connectId = undefined;
-    }
-    document.getElementById("voiceChannelInfo").style.display = "none";
-    send(JSON.stringify({
-        opCode: "RTC",
-        data: {
-            type: "LEAVE"
-        }
-    }));
-    Object.keys(connections).every(key =>{
-        connections[key].close();
-        delete connections[key];
-    });
-}
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
 let iceCache = {};
@@ -765,6 +746,27 @@ async function unloadRTC(){
         channelId = undefined;
         connectId = undefined;
     }
+}
+
+async function leave(){
+    showToast(`Left channel ${channelId}`,false,2);
+    if(channelId || connectId){
+        document.getElementById(channelId ?? connectId).style.color = "rgb(128, 132, 142)";
+        channelId = undefined;
+        connectId = undefined;
+    }
+    document.getElementById("voiceChannelInfo").style.display = "none";
+    send(JSON.stringify({
+        opCode: "RTC",
+        data: {
+            type: "LEAVE"
+        }
+    }));
+    unloadRTC();
+    Object.keys(connections).every(key =>{
+        connections[key].close();
+        delete connections[key];
+    });
 }
 
 async function createNewPeer(id){
