@@ -788,7 +788,7 @@ async function handleRTC(data){
     }
 }
 
-let localStream;
+let localStream,checkIfSpeaking;
 
 async function loadRTC() {
     const localAudio = document.getElementById("localAudio");
@@ -799,7 +799,11 @@ async function loadRTC() {
     rtcLoad = true;
     voiceChannelInfo.style.display = "flex";
 
-    const audioCtx = new AudioContext();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") {
+        await audioCtx.resume();
+    }
+
     const aCtxAnalyze = audioCtx.createAnalyser();
     aCtxAnalyze.fftSize = 256;
 
@@ -808,11 +812,9 @@ async function loadRTC() {
 
     const dataArr = new Uint8Array(aCtxAnalyze.frequencyBinCount);
 
-    const checkIfSpeaking = () => {
+    checkIfSpeaking = setInterval(async () => {
         aCtxAnalyze.getByteFrequencyData(dataArr);
-
         let vol = dataArr.reduce((a, b) => a + b) / dataArr.length;
-
         if (vol > 10) {
             if(!sentStop) return;
             sentStop = false;
@@ -834,11 +836,7 @@ async function loadRTC() {
                 }
             });
         }
-
-        requestAnimationFrame(checkIfSpeaking);
-    };
-
-    checkIfSpeaking();
+    },20);
 }
 
 async function unloadRTC(){
@@ -850,6 +848,7 @@ async function unloadRTC(){
     localAudio.srcObject = null;
     rtcLoad = false;
     voiceChannelInfo.style.display = "none";
+    clearInterval(checkIfSpeaking);
     if(channelId || connectId){
         document.getElementById(channelId ?? connectId).style.color = "rgb(128, 132, 142)";
         channelId = undefined;
