@@ -5,12 +5,11 @@ import Auth from "../structs/Auth";
 import {getUser} from "./usermanager";
 import {loadWebsocketEvents} from "./websocketEventLoader";
 import {hasConnection, setConnection, initConnectionManager} from "./connectionmanager";
-import User from "../structs/User";
 import {createHmac} from "crypto";
 
 let server;
 //Remember to increment this when publishing an update to enforce a reload of clients.
-const version = `1.7.0_159`;
+const version = `1.8.0_206`;
 
 const init = async (srv)=>{
     const events = await loadWebsocketEvents();
