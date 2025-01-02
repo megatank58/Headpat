@@ -714,7 +714,7 @@ function updateVoiceList(user, operation, value){
             if(value){
                 image.className += " speaking";
             } else {
-                image.className = target.className.split(" speaking")[0];
+                image.className = image.className.split(" speaking")[0];
             }
             break;
     }
