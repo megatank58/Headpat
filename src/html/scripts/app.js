@@ -729,13 +729,13 @@ async function handleRTC(data){
     switch(data.type){
         case "ALONE":
             channelId = connectId;
-            showToast(`Joined channel ${channelId}`,false,2);
+            //showToast(`Joined channel ${channelId}`,false,2);
             voiceChannelState.innerText = "RTC waiting: ";
             createVoiceList([currentUser.ID]);
             break;
         case "SEND_OFFER":
             channelId = connectId;
-            showToast(`Joined channel ${channelId}`,false,2);
+            //showToast(`Joined channel ${channelId}`,false,2);
             const que = [];
             data.members.forEach(member => {
                 que.push(createNewPeer(member));
@@ -768,7 +768,7 @@ async function handleRTC(data){
             break;
         case "LEAVE":
             if(!connections[data.user.ID]) return;
-            showToast(`${data.user.username} left channel ${channelId}`,false,2);
+            //showToast(`${data.user.username} left channel ${channelId}`,false,2);
             updateVoiceList(data.user, "DEL");
             const peerConnection = connections[data.user.ID];
             peerConnection.close();
