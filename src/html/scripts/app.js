@@ -821,7 +821,7 @@ async function loadRTC() {
             send({
                 opCode: "RTC",
                 data: {
-                    type: "SPEAKER",
+                    type: "SPEAK",
                     value: true
                 }
             });
@@ -831,7 +831,7 @@ async function loadRTC() {
             send({
                 opCode: "RTC",
                 data: {
-                    type: "SPEAKER",
+                    type: "SPEAK",
                     value: false
                 }
             });
