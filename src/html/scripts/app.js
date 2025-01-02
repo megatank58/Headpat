@@ -762,7 +762,7 @@ async function handleRTC(data){
             await receiveCandidate(data);
             break;
         case "JOIN":
-            showToast(`${data.user.username} joined channel ${channelId}`,false,2);
+            //showToast(`${data.user.username} joined channel ${channelId}`,false,2);
             updateVoiceList(data.user,"ADD");
             updateVoiceList(data.user, "MUTE", data.muted);
             break;
@@ -859,13 +859,7 @@ async function unloadRTC(){
 }
 
 async function leave(){
-    showToast(`Left channel ${channelId}`,false,2);
-    if(channelId || connectId){
-        document.getElementById(channelId ?? connectId).style.color = "rgb(128, 132, 142)";
-        channelId = undefined;
-        connectId = undefined;
-    }
-    document.getElementById("voiceChannelInfo").style.display = "none";
+    //showToast(`Left channel ${channelId}`,false,2);
     if(channelId) {
         send({
             opCode: "RTC",
@@ -874,6 +868,12 @@ async function leave(){
             }
         });
     }
+    if(channelId || connectId){
+        document.getElementById(channelId ?? connectId).style.color = "rgb(128, 132, 142)";
+        channelId = undefined;
+        connectId = undefined;
+    }
+    document.getElementById("voiceChannelInfo").style.display = "none";
     let voiceChat = document.getElementById("voiceChannelUserContainer");
     if(voiceChat) voiceChat.remove();
     unloadRTC();
