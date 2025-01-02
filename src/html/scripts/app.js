@@ -701,7 +701,7 @@ function updateVoiceList(user, operation, value){
         case "ADD":
             voiceChat.innerHTML += `
 <div data-userid="${user.ID}" css-active="user_${user.ID}" class="user ONLINE exitable" id="vcuser_${user.ID}" onclick="openUserPopup('${user.ID}',this)" oncontextmenu="openUserContext(event, this)">
-    <img onerror="this.src='/resource/user/${user.ID}/avatar?size=32&nonce=0'" data-userid="${user.ID}" class="avatar" loading="lazy" src="/resource/user/${user.ID}/avatar?size=32&nonce=${Date.now()}">
+    <img id="vcuser_${user.ID}_avatar" onerror="this.src='/resource/user/${user.ID}/avatar?size=32&nonce=0'" data-userid="${user.ID}" class="avatar" loading="lazy" src="/resource/user/${user.ID}/avatar?size=32&nonce=${Date.now()}">
     <span>${user.username}</span>
 </div>`;
             break;
@@ -709,10 +709,11 @@ function updateVoiceList(user, operation, value){
             target.remove();
             break;
         case "SPEAK":
+            let image = document.getElementById(`vcuser_${user.ID}_avatar`);
             if(value){
-                target.className += " speaking";
+                image.className += " speaking";
             } else {
-                target.className = target.className.split(" speaking")[0];
+                image.className = target.className.split(" speaking")[0];
             }
             break;
     }
