@@ -10,7 +10,7 @@ import {removeConnection} from "./voiceconnectionmanager";
 
 let server;
 //Remember to increment this when publishing an update to enforce a reload of clients.
-const version = `1.8.6_219`;
+const version = `1.8.6_222`;
 
 const init = async (srv)=>{
     const events = await loadWebsocketEvents();
