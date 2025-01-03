@@ -104,6 +104,7 @@ function openUserPopup(userID, element, editable) {
         const discriminator = document.getElementById(`userPopupDiscriminator`);
         const joined = document.getElementById(`userPopupJoined`);
         const status = document.getElementById(`userPopupStatus`);
+        const role = document.getElementById(`userPopupRole`);
         avatar.src = `/resource/user/${user.ID}/avatar?size=64`;
         banner.src = `/resource/user/${user.ID}/banner`;
         status.classList.add(userStatus);
@@ -111,6 +112,7 @@ function openUserPopup(userID, element, editable) {
         username.innerHTML = user.username ?? "Nya";
         discriminator.innerHTML = user.discriminator ?? "0000";
         joined.innerHTML = parseTimestamp(user.createdAt);
+        role.innerHTML = user.role;
     }
 
     popup.style = 'display: flex;';

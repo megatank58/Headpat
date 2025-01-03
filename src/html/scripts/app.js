@@ -160,6 +160,7 @@ function onMessage(event){
         case "UPD_PRF":
             document.getElementById("userPopupUsername").value = eventData.data.user.username ?? "";
             document.getElementById("userPopupDiscriminator").value = eventData.data.user.discriminator ?? "";
+            document.getElementById("userPopupRole").value = eventData.data.user.role ?? "";
             setUserProfile(eventData.data.user);
             showToast('Profile Saved', false, 2.5);
             break;
