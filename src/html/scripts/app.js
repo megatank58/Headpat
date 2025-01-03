@@ -842,6 +842,11 @@ async function loadRTC() {
     },20);
 }
 
+function adjustVolumeOfPeer(id, volume){
+    let remoteAudio = document.getElementById(`remoteAudio-${id}`);
+    remoteAudio.volume = volume;
+}
+
 async function unloadRTC(){
     const localAudio = document.getElementById("localAudio");
     if(localStream){
